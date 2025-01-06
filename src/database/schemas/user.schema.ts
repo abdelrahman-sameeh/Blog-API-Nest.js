@@ -20,7 +20,7 @@ export class User {
   @Prop({ enum: Object.values(UserRoles), default: UserRoles.user })
   role: UserRoles
 
-  @Prop({ password: true })
+  @Prop({ required: true })
   password: string;
 }
 

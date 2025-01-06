@@ -2,16 +2,19 @@ import { ForbiddenException, HttpException, HttpStatus, Injectable } from '@nest
 import { CreateUserDto } from './dto/create-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from '../database/schemas/user.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { generateToken } from '../common/helper/generate-token';
 import { UserSerializer } from './serializers/user.serializer';
 import { isUnique } from '../common/helper/is-unique';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) { }
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+  ) { }
 
   async register(createUserDto: CreateUserDto) {
     await isUnique(this.userModel, 'email', createUserDto.email)
@@ -32,7 +35,6 @@ export class AuthService {
     }
   }
 
-
   async login(loginDto: LoginDto) {
     const { email, username, password } = loginDto;
     const filterKey = email ? 'email' : 'username';
@@ -50,6 +52,29 @@ export class AuthService {
       data: {
         user: serializedData,
         token
+      }
+    }
+  }
+
+
+  async changePassword(changePasswordDto: ChangePasswordDto, userId: Types.ObjectId): Promise<object> {
+    const user = await this.userModel.findById(userId);
+
+    const isOldPasswordValid = await bcrypt.compare(changePasswordDto.oldPassword, user.password);
+
+    if (!isOldPasswordValid) {
+      throw new HttpException('old password is incorrect', HttpStatus.BAD_REQUEST);
+    }
+
+    const hashedNewPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
+
+    user.password = hashedNewPassword;
+    await user.save();
+
+    return {
+      data: {
+        status: "success",
+        message: 'password changed successfully',
       }
     }
   }

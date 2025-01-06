@@ -1,24 +1,11 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from "class-validator";
+import { IsNotEmpty, IsString, Matches, MaxLength, MinLength } from "class-validator";
 
-export class CreateUserDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(20)
-  firstName: string;
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  lastName: string;
-
-  @IsEmail({}, { message: 'invalid email address' })
-  @MaxLength(50)
-  email: string;
-
+export class ChangePasswordDto{
   @IsString()
   @IsNotEmpty()
   @MaxLength(25)
-  username: string;
+  oldPassword: string
 
   @IsString()
   @MinLength(4, { message: 'Password must be at least 4 characters long' })
@@ -27,6 +14,5 @@ export class CreateUserDto {
   @Matches(/^(?=.*[a-z])/, { message: 'Password must contain at least one lowercase letter' })
   @Matches(/^(?=.*\d)/, { message: 'Password must contain at least one number' })
   @Matches(/^(?=.*[!@#$%^&*])/, { message: 'Password must contain at least one special character' })
-  password: string
-
+  newPassword: string
 }
