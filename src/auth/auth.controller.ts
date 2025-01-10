@@ -5,6 +5,8 @@ import { LoginDto } from './dto/login.dto';
 import { IsAuth } from './decorators/is-auth.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { Request } from 'express';
+import { SendResetCodeDto } from './dto/send-reset-code.dto';
+import { ChangeForgetPasswordDto } from './dto/changeForgetPasswordDto';
 
 @Controller({ version: '1' })
 @UseInterceptors(ClassSerializerInterceptor)
@@ -29,6 +31,19 @@ export class AuthController {
     return this.authService.changePassword(changePasswordDto, userId)
   }
 
+  @Post("send-reset-code")
+  @HttpCode(HttpStatus.OK)
+  sendResetCode(@Body() sendResetCodeDto: SendResetCodeDto){
+    return this.authService.sendResetCode(sendResetCodeDto)
+  }
+
+
+  @Post("change-forget-password")
+  @HttpCode(HttpStatus.OK)
+  changeForgetPassword(@Body() changeForgetPasswordDto: ChangeForgetPasswordDto){
+    return this.authService.changeForgetPassword(changeForgetPasswordDto)
+  }
+  
 
 
 }
