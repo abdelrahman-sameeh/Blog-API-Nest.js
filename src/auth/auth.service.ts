@@ -66,7 +66,7 @@ export class AuthService {
     }
   }
 
-  async changePassword(changePasswordDto: ChangePasswordDto, userId: Types.ObjectId): Promise<object> {
+  async changePassword(changePasswordDto: ChangePasswordDto, userId: string): Promise<object> {
     const user = await this.userModel.findById(userId);
 
     const isOldPasswordValid = await bcrypt.compare(changePasswordDto.oldPassword, user.password);

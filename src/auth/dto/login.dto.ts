@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, IsNotEmpty, Validate, ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsNotEmpty, Validate, ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface, MaxLength } from 'class-validator';
 
 // Custom Validator
 @ValidatorConstraint({ name: 'EitherEmailOrUsername', async: false })
@@ -16,14 +16,17 @@ export class EitherEmailOrUsernameConstraint implements ValidatorConstraintInter
 export class LoginDto {
   @IsEmail()
   @IsOptional()
+  @MaxLength(255)
   email?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(255)
   username?: string;
 
   @IsNotEmpty()
   @IsString()
+  @MaxLength(255)
   password: string;
 
   @Validate(EitherEmailOrUsernameConstraint)

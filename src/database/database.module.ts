@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EnvInterface } from 'src/common/interfaces/env.interface';
-import { getSchemas } from './schemas/schemas';
+import { getSchemas } from './schemas/utils';
 
 @Module({
   imports: [

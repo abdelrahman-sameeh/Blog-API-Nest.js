@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { User } from "./user.schema";
 import { HydratedDocument, Types } from "mongoose";
-import { Base } from "./base";
+import { Base } from "./utils";
 
 @Schema({timestamps: true})
 export class ResetCode extends Base{

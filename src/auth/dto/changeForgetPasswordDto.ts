@@ -14,7 +14,7 @@ export class ChangeForgetPasswordDto{
   @MaxLength(255)
   username: string
 
-  @IsPassword({message: "invalid password format"})
+  @IsPassword()
   newPassword: string
 
   @IsString()
