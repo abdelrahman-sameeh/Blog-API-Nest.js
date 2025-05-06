@@ -4,7 +4,7 @@ import { UsersModule } from './users/users.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
-import { AccessGuard } from './auth/guards/access.guard';
+import { AccessGuard } from './common/guards/access.guard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EnvInterface } from './common/interfaces/env.interface';
 import { ScheduleModule } from '@nestjs/schedule';

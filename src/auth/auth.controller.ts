@@ -2,7 +2,7 @@ import { Body, ClassSerializerInterceptor, Controller, HttpCode, HttpException, 
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
-import { IsAuth } from './decorators/is-auth.decorator';
+import { IsAuth } from '../common/decorators/is-auth.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { Request } from 'express';
 import { SendResetCodeDto } from './dto/send-reset-code.dto';

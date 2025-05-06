@@ -9,7 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as jwt from 'jsonwebtoken';
-import { User } from 'src/database/schemas/user.schema';
+import { User } from 'src/users/schema/user.schema';
 import { IS_AUTH, ROLES } from 'src/common/constant';
 
 @Injectable()

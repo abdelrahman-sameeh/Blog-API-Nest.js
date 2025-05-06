@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { User } from "./user.schema";
 import { HydratedDocument, Types } from "mongoose";
 import { Base } from "./utils";
+import { User } from "src/users/schema/user.schema";
 
 @Schema({timestamps: true})
 export class ResetCode extends Base{
@@ -16,6 +16,6 @@ export class ResetCode extends Base{
 }
 
 
-export type ResetCodeDocument = HydratedDocument<ResetCode>;
+export type ResetCodeType = HydratedDocument<ResetCode>;
 export const resetCodeSchema = SchemaFactory.createForClass(ResetCode);
 

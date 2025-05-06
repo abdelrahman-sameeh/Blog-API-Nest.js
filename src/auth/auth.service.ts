@@ -1,8 +1,8 @@
 import { ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from '../database/schemas/user.schema';
-import { Model, Types } from 'mongoose';
+import { User } from '../users/schema/user.schema';
+import { Model } from 'mongoose';
 import { generateToken } from '../common/helper/generate-token';
 import { UserSerializer } from './serializers/user.serializer';
 import { isUnique } from '../common/helper/is-unique';

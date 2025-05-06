@@ -1,7 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { AuthService } from "../auth.service";
 import { getModelToken } from "@nestjs/mongoose";
-import { User } from "../../database/schemas/user.schema";
+import { User } from "../../users/schema/user.schema";
 
 describe("AuthService", () => {
   let service: AuthService;
@@ -26,7 +26,7 @@ describe("AuthService", () => {
   });
 
   describe('register', () => {
-    
+
     it("should create a new user and return token", async () => {
       const inputDto = {
         firstName: "Abdelrahman",
