@@ -1,10 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
-import { Base } from "./utils";
 import { User } from "src/users/schema/user.schema";
 
-@Schema({timestamps: true})
-export class ResetCode extends Base{
+@Schema({ timestamps: true })
+export class ResetCode  {
   @Prop({ type: String })
   code: string;
 
@@ -13,9 +12,15 @@ export class ResetCode extends Base{
 
   @Prop({ type: String })
   iv: string
+
+  @Prop()
+  createdAt: Date;
+
+  @Prop()
+  updatedAt: Date;
 }
 
 
 export type ResetCodeType = HydratedDocument<ResetCode>;
-export const resetCodeSchema = SchemaFactory.createForClass(ResetCode);
+export const ResetCodeSchema = SchemaFactory.createForClass(ResetCode);
 

@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EnvInterface } from 'src/common/interfaces/env.interface';
-import { getSchemas } from './schemas/utils';
+import { schemas } from './schemas/utils';
 
+@Global()
 @Module({
   imports: [
     MongooseModule.forRootAsync({
@@ -13,7 +14,7 @@ import { getSchemas } from './schemas/utils';
       }),
       inject: [ConfigService],
     }),
-    MongooseModule.forFeature(getSchemas())
+    MongooseModule.forFeature(schemas)
   ],
   exports: [MongooseModule]
 })

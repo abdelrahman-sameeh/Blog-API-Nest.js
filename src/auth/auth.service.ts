@@ -32,6 +32,7 @@ export class AuthService {
 
     const salt = await bcrypt.genSalt();
     createUserDto.password = await bcrypt.hash(createUserDto.password, salt);
+
     const user = await this.userModel.create(createUserDto)
     const token = await generateToken(user)
     const serializedData = new UserSerializer(user.toObject())

@@ -26,7 +26,7 @@ export class AuthController {
   @Post("change-password")
   @IsAuth()
   @HttpCode(HttpStatus.OK)
-  changePassword(@Body() changePasswordDto: ChangePasswordDto, @Req() request: Request) {
+  changePassword(@Body() changePasswordDto: ChangePasswordDto, @Req() request) {
     const userId = request.user._id
     return this.authService.changePassword(changePasswordDto, userId)
   }

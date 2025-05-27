@@ -8,6 +8,8 @@ import { AccessGuard } from './common/guards/access.guard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EnvInterface } from './common/interfaces/env.interface';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ArticleModule } from './articles/articles.module';
+import { CategoriesModule } from './categories/categories.module';
 
 const coreModules = [
   ConfigModule.forRoot({
@@ -36,6 +38,8 @@ const coreModules = [
   DatabaseModule,
   AuthModule,
   UsersModule,
+  ArticleModule,
+  CategoriesModule
 ];
 
 
