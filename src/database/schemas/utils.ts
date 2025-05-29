@@ -3,6 +3,7 @@ import { ResetCode, ResetCodeSchema } from "./reset-code.schema";
 import { Category, CategorySchema } from "src/categories/schema/category.schema";
 import { Article, ArticleSchema } from "src/articles/schemas/article.schema";
 import { ArticleBlock, ArticleBlockSchema } from "src/articles/schemas/article-block.schema";
+import { SavedArticle, SavedArticleSchema } from "src/saved-articles/schema/saved.article.schema";
 
 export const schemas = [
   { name: User.name, schema: UserSchema },
@@ -10,4 +11,7 @@ export const schemas = [
   { name: Category.name, schema: CategorySchema },
   { name: Article.name, schema: ArticleSchema },
   { name: ArticleBlock.name, schema: ArticleBlockSchema },
+  { name: SavedArticle.name, schema: SavedArticleSchema },
 ]
+
+

@@ -10,6 +10,7 @@ import { EnvInterface } from './common/interfaces/env.interface';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ArticleModule } from './articles/articles.module';
 import { CategoriesModule } from './categories/categories.module';
+import { SavedArticleModule } from './saved-articles/saved-article.module';
 
 const coreModules = [
   ConfigModule.forRoot({
@@ -39,7 +40,8 @@ const coreModules = [
   AuthModule,
   UsersModule,
   ArticleModule,
-  CategoriesModule
+  CategoriesModule,
+  SavedArticleModule
 ];
 
 

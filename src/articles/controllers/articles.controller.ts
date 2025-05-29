@@ -10,7 +10,7 @@ import { ParseMongoIdPipe } from "src/common/pipe/parse-mongo-id.pipe";
 import { UpdateArticleCategoryDto } from "../dto/update-article-category.dto";
 import { generateUniqueFilename, getDestinationByMimeType } from "src/common/helper/file-upload";
 import { ArticleOwnerGuard } from "../guards/article-owner.guard";
-import { UpdateArticleTagsDto } from "../dto/new-tags.dto";
+import { UpdateArticleTagsDto } from "../dto/update-article-tags.dto";
 
 
 @Controller({ version: '1' })

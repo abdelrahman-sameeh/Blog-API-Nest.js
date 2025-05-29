@@ -7,7 +7,7 @@ import { ArticleBlock } from "../schemas/article-block.schema";
 import { Category } from "src/categories/schema/category.schema";
 import { Pagination } from "src/common/helper/pagination";
 import { UpdateArticleCategoryDto } from "../dto/update-article-category.dto";
-import { UpdateArticleTagsDto } from "../dto/new-tags.dto";
+import { UpdateArticleTagsDto } from "../dto/update-article-tags.dto";
 
 @Injectable()
 export class ArticleService {
@@ -186,8 +186,8 @@ export class ArticleService {
     }
     return article.toObject()
   }
-  
-  
+
+
   async updateArticleTags(id: mongoose.Types.ObjectId, updateArticleTagsDto: UpdateArticleTagsDto) {
     const article = await this.articleModel.findByIdAndUpdate(id, { $set: { tags: updateArticleTagsDto.tags } }, { new: true })
     if (!article) {
