@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { InjectModel } from "@nestjs/mongoose";
 import { Article } from "../schemas/article.schema";
 import mongoose, { Model, ObjectId } from "mongoose";
-import { UserType } from "src/users/schema/user.schema";
+import { User, UserType } from "src/users/schema/user.schema";
 import { ArticleBlock } from "../schemas/article-block.schema";
 import { Category } from "src/categories/schema/category.schema";
 import { Pagination } from "src/common/helper/pagination";
@@ -103,7 +103,7 @@ export class ArticleService {
   }
 
 
-  private async buildArticleQuery(query: any, userId?: mongoose.Types.ObjectId) {
+  private async buildArticleQuery(query, userId?) {
     const { search, category, tags } = query;
     const queryString: any = {};
 
@@ -146,7 +146,7 @@ export class ArticleService {
   }
 
 
-  async findSpecificArticles(user: UserType, query) {
+  async findSpecificArticles(user: User, query) {
     const { page, limit } = query;
     const queryString = await this.buildArticleQuery(query, user._id);
     const populate = [{ path: "category", select: "title" }];
@@ -197,6 +197,28 @@ export class ArticleService {
   }
 
 
+  async likeArticle(user: User, articleId){
+    const article = await this.articleModel.findById(articleId)
+    if(!article){
+      throw new NotFoundException("Article not found")
+    }
+    if(!article.likes.includes(user._id as any)){
+      article.likes.push(user._id as any)
+    }
+    return article.save()
+  }
+
+  async dislikeArticle(user: User, articleId){
+    const article = await this.articleModel.findById(articleId)
+    if(!article){
+      throw new NotFoundException("Article not found")
+    }
+    const index = article.likes.indexOf(user._id as any)
+    if(index!==-1){
+      article.likes.splice(index, 1)
+    }
+    return article.save()
+  }
 
 
 }

@@ -1,7 +1,7 @@
 export class Pagination {
   private skip: number;
 
-  constructor(private model, private query?: string, private page?, private limit?, private sort={}, private populate?) {
+  constructor(private model, private query?, private page?, private limit?, private sort={}, private populate?) {
     this.model = model;
     this.query = query;
     this.page = parseInt(page, 10) || 1;

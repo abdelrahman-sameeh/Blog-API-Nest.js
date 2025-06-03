@@ -11,11 +11,12 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ArticleModule } from './articles/articles.module';
 import { CategoriesModule } from './categories/categories.module';
 import { SavedArticleModule } from './saved-articles/saved-article.module';
+import { ReviewModule } from './review/review.module';
 
 const coreModules = [
   ConfigModule.forRoot({
     isGlobal: true,
-    envFilePath: process.env.NODE_ENV === 'dev' ? './env/dev.env' : './env/prod.env',
+    envFilePath: process.env.NODE_ENV === 'dev' ? 'env/dev.env' : 'env/prod.env',
   }),
   MailerModule.forRootAsync({
     imports: [ConfigModule],
@@ -24,12 +25,12 @@ const coreModules = [
         transport: {
           service: 'gmail',
           auth: {
-            user: configService.get<string>('EMAIL_USERNAME'),
-            pass: configService.get<string>('EMAIL_PASSWORD'),
+            user: configService.get('EMAIL_USERNAME'),
+            pass: configService.get('EMAIL_PASSWORD'),
           },
         },
         defaults: {
-          from: `"Article Verse" <${configService.get<string>("EMAIL_USERNAME")}>`,
+          from: `"Article Verse" <${configService.get("EMAIL_USERNAME")}>`,
         },
       };
     },
@@ -41,7 +42,8 @@ const coreModules = [
   UsersModule,
   ArticleModule,
   CategoriesModule,
-  SavedArticleModule
+  SavedArticleModule,
+  ReviewModule
 ];
 
 

@@ -83,6 +83,21 @@ export class ArticleController {
   }
 
 
+  @Patch("article/:id/like")
+  @IsAuth()
+  @UseInterceptors(WrapResponseInterceptor)
+  likeArticle(@Req() request, @Param("id", ParseMongoIdPipe) articleId) {
+    return this.articleService.likeArticle(request.user, articleId)
+  }
+
+
+  @Patch("article/:id/dislike")
+  @IsAuth()
+  @UseInterceptors(WrapResponseInterceptor)
+  dislikeArticle(@Req() request, @Param("id", ParseMongoIdPipe) id) {
+    return this.articleService.dislikeArticle(request.user, id)
+  }
+
 }
 
 
