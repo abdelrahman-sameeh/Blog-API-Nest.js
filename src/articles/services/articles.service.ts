@@ -1,13 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Article } from "../schemas/article.schema";
-import mongoose, { Model, ObjectId } from "mongoose";
+import mongoose, { Model, ObjectId, Types } from "mongoose";
 import { User, UserType } from "src/users/schema/user.schema";
 import { ArticleBlock } from "../schemas/article-block.schema";
 import { Category } from "src/categories/schema/category.schema";
 import { Pagination } from "src/common/helper/pagination";
 import { UpdateArticleCategoryDto } from "../dto/update-article-category.dto";
 import { UpdateArticleTagsDto } from "../dto/update-article-tags.dto";
+import { Tag } from "src/tags/schema/tag.schema";
+import { Review } from "src/review/schema/review.schema";
 
 @Injectable()
 export class ArticleService {
@@ -16,6 +18,8 @@ export class ArticleService {
     @InjectModel(Article.name) private readonly articleModel: Model<Article>,
     @InjectModel(ArticleBlock.name) private readonly articleBlockModel: Model<ArticleBlock>,
     @InjectModel(Category.name) private readonly categoryModel: Model<Category>,
+    @InjectModel(Tag.name) private readonly tagModel: Model<Tag>,
+    @InjectModel(Review.name) private readonly reviewModel: Model<Review>,
   ) { }
 
 
@@ -30,11 +34,25 @@ export class ArticleService {
       throw new BadRequestException('Invalid category ID');
     }
 
-    const tags: string[] = Array.isArray(body?.tags)
-      ? body.tags
-      : typeof body?.tags === 'string'
-        ? body.tags.split(',').map((tag: string) => tag.toLowerCase().trim())
-        : [];
+    let tags = body.tags
+    const tagIds = []
+
+    if (tags) {
+      tags = tags.map((tag: string) => {
+        return tag.toLowerCase().trim().replaceAll(/\s+/g, "-")
+      })
+
+      for (const tag of tags) {
+        const existTag = await this.tagModel.findOne({ title: tag })
+        if (!existTag) {
+          const newTag = await this.tagModel.create({ title: tag })
+          tagIds.push(newTag._id)
+          continue
+        }
+        tagIds.push(existTag._id)
+      }
+    }
+
 
     const blocks: any[] = [];
 
@@ -82,7 +100,7 @@ export class ArticleService {
     const article = await this.articleModel.create({
       category,
       user: user._id,
-      tags,
+      tags: tagIds,
       title
     })
 
@@ -129,7 +147,14 @@ export class ArticleService {
     }
 
     if (tags) {
-      queryString.tags = { $in: tags }
+      const tagsIds = tags.map(tagId => {
+        try {
+          return new Types.ObjectId(tagId)
+        } catch (err) {
+          throw new BadRequestException("tag must be mongo id")
+        }
+      })
+      queryString.tags = { $in: tagsIds }
     }
 
     return queryString;
@@ -139,7 +164,10 @@ export class ArticleService {
   async find(query) {
     const { page, limit } = query;
     const queryString = await this.buildArticleQuery(query);
-    const populate = [{ path: "category", select: "title" }];
+    const populate = [
+      { path: "category", select: "title" },
+      { path: "tags", model: Tag.name, select: "title" }
+    ];
 
     const paginator = new Pagination(this.articleModel, queryString, page, limit, {}, populate);
     return await paginator.paginate();
@@ -149,7 +177,10 @@ export class ArticleService {
   async findSpecificArticles(user: User, query) {
     const { page, limit } = query;
     const queryString = await this.buildArticleQuery(query, user._id);
-    const populate = [{ path: "category", select: "title" }];
+    const populate = [
+      { path: "category", select: "title" },
+      { path: "tags", model: Tag.name, select: "title" }
+    ];
 
     const paginator = new Pagination(this.articleModel, queryString, page, limit, {}, populate);
     return await paginator.paginate();
@@ -167,14 +198,20 @@ export class ArticleService {
 
 
   async findOne(id: mongoose.Types.ObjectId) {
-    const article = await this.articleModel.findById(id).populate("category", "title")
+    const article = await this.articleModel
+    .findById(id)
+    .populate([{ path: "category", select: "title" }, { path: "tags", model: Tag.name, select: "title" }])
+    
     if (!article) {
       throw new NotFoundException(`not found article ${id}`)
     }
     const blocks = await this.articleBlockModel.find({ article: article._id }, "type data order").sort({ order: 1 })
+    const comments = await this.reviewModel.find({article: id}, "-article -updatedAt -__v").populate([{path: "author", select: "firstName lastName"}]).limit(10)
+    
     return {
       ...article.toObject(),
-      blocks
+      blocks,
+      comments
     }
   }
 
@@ -197,24 +234,24 @@ export class ArticleService {
   }
 
 
-  async likeArticle(user: User, articleId){
+  async likeArticle(user: User, articleId) {
     const article = await this.articleModel.findById(articleId)
-    if(!article){
+    if (!article) {
       throw new NotFoundException("Article not found")
     }
-    if(!article.likes.includes(user._id as any)){
+    if (!article.likes.includes(user._id as any)) {
       article.likes.push(user._id as any)
     }
     return article.save()
   }
 
-  async dislikeArticle(user: User, articleId){
+  async dislikeArticle(user: User, articleId) {
     const article = await this.articleModel.findById(articleId)
-    if(!article){
+    if (!article) {
       throw new NotFoundException("Article not found")
     }
     const index = article.likes.indexOf(user._id as any)
-    if(index!==-1){
+    if (index !== -1) {
       article.likes.splice(index, 1)
     }
     return article.save()
