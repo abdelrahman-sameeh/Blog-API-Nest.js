@@ -1,10 +1,9 @@
-import { Body, ClassSerializerInterceptor, Controller, HttpCode, HttpException, HttpStatus, Post, Req, SerializeOptions, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Get, HttpCode, HttpException, HttpStatus, Post, Req, SerializeOptions, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { IsAuth } from '../common/decorators/is-auth.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { Request } from 'express';
 import { SendResetCodeDto } from './dto/send-reset-code.dto';
 import { ChangeForgetPasswordDto } from './dto/changeForgetPasswordDto';
 
@@ -19,6 +18,7 @@ export class AuthController {
   }
 
   @Post("login")
+  @HttpCode(HttpStatus.OK)
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto)
   }
@@ -45,5 +45,10 @@ export class AuthController {
   }
   
 
+  @Get("auth")
+  @IsAuth()
+  getLoggedInUser(@Req() request){
+    return this.authService.getLoggedInUser(request.user)
+  }
 
 }

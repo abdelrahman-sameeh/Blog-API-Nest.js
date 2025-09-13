@@ -17,6 +17,7 @@ import { ChangeForgetPasswordDto } from './dto/changeForgetPasswordDto';
 import * as bcrypt from "bcrypt"
 import { encrypt } from 'src/common/helper/encrypt';
 import { Cron } from '@nestjs/schedule';
+import { generateUsername } from 'src/common/helper/generate-username';
 
 @Injectable()
 export class AuthService {
@@ -28,12 +29,17 @@ export class AuthService {
 
   async register(createUserDto: CreateUserDto) {
     await isUnique(this.userModel, 'email', createUserDto.email)
-    await isUnique(this.userModel, 'username', createUserDto.username)
+    
+
+    const dto = {
+      ...createUserDto,
+      username: generateUsername(createUserDto.firstName)
+    }
 
     const salt = await bcrypt.genSalt();
-    createUserDto.password = await bcrypt.hash(createUserDto.password, salt);
+    dto.password = await bcrypt.hash(dto.password, salt);
 
-    const user = await this.userModel.create(createUserDto)
+    const user = await this.userModel.create(dto)
     const token = await generateToken(user)
     const serializedData = new UserSerializer(user.toObject())
 
@@ -89,6 +95,41 @@ export class AuthService {
     }
   }
 
+
+  async getLoggedInUser(user){
+    user._id = user._id.toString()
+    return user;
+  }
+
+
+  private async _sendPasswordResetEmail(user: any, codeToSend: string) {
+    await this.mailService.sendMail({
+      to: user.email,
+      subject: 'Password Reset Code - Action Required',
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #f4f7fa; padding: 20px; border-radius: 8px;">
+          <h2 style="color: #2c3e50;">Password Reset Request</h2>
+          <p style="font-size: 16px; color: #34495e;">
+            Hello <strong>${user.firstName || "User"}</strong>,
+          </p>
+          <p style="font-size: 16px; color: #34495e;">
+            We received a request to reset your password. Please use the code below to proceed with resetting your password.
+          </p>
+          <div style="background-color: #e9f7fc; padding: 15px; border-radius: 5px; font-size: 18px; color: #2980b9; font-weight: bold;">
+            <p style="margin: 0;">Your password reset code is: <span style="font-size: 22px; color: #e74c3c;">${codeToSend}</span></p>
+          </div>
+          <p style="font-size: 16px; color: #34495e;">
+            This code will expire in <strong>15 minutes</strong>, so please use it promptly.
+          </p>
+          <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+          <footer style="font-size: 14px; color: #7f8c8d;">
+            <p>&copy; 2025 Article Verse. All rights reserved.</p>
+          </footer>
+        </div>
+      `
+    });
+  }
+
   async sendResetCode(sendResetCodeDto: SendResetCodeDto) {
     const { email, username } = sendResetCodeDto;
     const query = {};
@@ -118,39 +159,11 @@ export class AuthService {
 
     await this._sendPasswordResetEmail(user, codeToSend);
 
-    return {
+      return {
       data: {
         message: "reset code sent successfully"
       }
     }
-  }
-
-  async _sendPasswordResetEmail(user: any, codeToSend: string) {
-    await this.mailService.sendMail({
-      to: user.email,
-      subject: 'Password Reset Code - Action Required',
-      html: `
-        <div style="font-family: Arial, sans-serif; background-color: #f4f7fa; padding: 20px; border-radius: 8px;">
-          <h2 style="color: #2c3e50;">Password Reset Request</h2>
-          <p style="font-size: 16px; color: #34495e;">
-            Hello <strong>${user.firstName || "User"}</strong>,
-          </p>
-          <p style="font-size: 16px; color: #34495e;">
-            We received a request to reset your password. Please use the code below to proceed with resetting your password.
-          </p>
-          <div style="background-color: #e9f7fc; padding: 15px; border-radius: 5px; font-size: 18px; color: #2980b9; font-weight: bold;">
-            <p style="margin: 0;">Your password reset code is: <span style="font-size: 22px; color: #e74c3c;">${codeToSend}</span></p>
-          </div>
-          <p style="font-size: 16px; color: #34495e;">
-            This code will expire in <strong>15 minutes</strong>, so please use it promptly.
-          </p>
-          <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
-          <footer style="font-size: 14px; color: #7f8c8d;">
-            <p>&copy; 2025 Article Verse. All rights reserved.</p>
-          </footer>
-        </div>
-      `
-    });
   }
 
   async changeForgetPassword(changeForgetPassword: ChangeForgetPasswordDto) {

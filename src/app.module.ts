@@ -12,6 +12,7 @@ import { ArticleModule } from './articles/articles.module';
 import { CategoriesModule } from './categories/categories.module';
 import { SavedArticleModule } from './saved-articles/saved-article.module';
 import { ReviewModule } from './review/review.module';
+import { TagsModule } from './tags/tags.module';
 
 const coreModules = [
   ConfigModule.forRoot({
@@ -43,7 +44,8 @@ const coreModules = [
   ArticleModule,
   CategoriesModule,
   SavedArticleModule,
-  ReviewModule
+  ReviewModule,
+  TagsModule
 ];
 
 

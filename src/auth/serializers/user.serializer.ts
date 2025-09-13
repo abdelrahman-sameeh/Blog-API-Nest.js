@@ -1,7 +1,7 @@
 import { Exclude, Expose } from 'class-transformer';
 
 export class UserSerializer {
-  @Exclude()
+  @Expose()
   _id: any;
 
   @Expose()
