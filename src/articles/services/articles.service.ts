@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Article } from "../schemas/article.schema";
 import mongoose, { Model, ObjectId, Types } from "mongoose";
@@ -10,18 +10,36 @@ import { UpdateArticleCategoryDto } from "../dto/update-article-category.dto";
 import { UpdateArticleTagsDto } from "../dto/update-article-tags.dto";
 import { Tag } from "src/tags/schema/tag.schema";
 import { Review } from "src/review/schema/review.schema";
+import { REQUEST } from "@nestjs/core";
+import { Request } from "express";
+import path from "path"
+import { SavedArticle } from "src/saved-articles/schema/saved.article.schema";
 
 @Injectable()
 export class ArticleService {
 
   constructor(
+    @Inject(REQUEST) private readonly request: Request,
     @InjectModel(Article.name) private readonly articleModel: Model<Article>,
     @InjectModel(ArticleBlock.name) private readonly articleBlockModel: Model<ArticleBlock>,
     @InjectModel(Category.name) private readonly categoryModel: Model<Category>,
     @InjectModel(Tag.name) private readonly tagModel: Model<Tag>,
     @InjectModel(Review.name) private readonly reviewModel: Model<Review>,
+    @InjectModel(SavedArticle.name) private readonly savedArticleModel: Model<SavedArticle>,
   ) { }
 
+
+  public _getServerUrl(...parts: string[]) {
+    /* 
+      Base url is >> http://localhost:3000
+      if we need add /api/v1 to url to be 
+      http://localhost:3000/api/v1
+      set in parts param _getServerUrl("api", "v1");
+    */
+    const baseUrl = `${this.request.protocol}://${this.request.get("host")}`;
+    const url = parts.length ? new URL(parts.join("/"), baseUrl + "/") : baseUrl;
+    return url.toString();
+  }
 
   async create(body: any, files: Express.Multer.File[], user: UserType) {
     const title = body['title']
@@ -199,19 +217,43 @@ export class ArticleService {
 
   async findOne(id: mongoose.Types.ObjectId) {
     const article = await this.articleModel
-    .findById(id)
-    .populate([{ path: "category", select: "title" }, { path: "tags", model: Tag.name, select: "title" }])
-    
+      .findById(id)
+      .populate("user", "firstName lastName")
+      .populate([
+        { path: "category", select: "title" },
+        { path: "tags", model: Tag.name, select: "title" },
+        { path: "likes", model: User.name, select: "firstName lastName picture" }
+      ])
+
     if (!article) {
       throw new NotFoundException(`not found article ${id}`)
     }
-    const blocks = await this.articleBlockModel.find({ article: article._id }, "type data order").sort({ order: 1 })
-    const comments = await this.reviewModel.find({article: id}, "-article -updatedAt -__v").populate([{path: "author", select: "firstName lastName"}]).limit(10)
-    
+    const blocks = await this.articleBlockModel.find({ article: article._id }, "type data order lang").sort({ order: 1 })
+    const comments = await this.reviewModel.find({ article: id }, "-article -updatedAt -__v").populate([{ path: "author", select: "firstName lastName picture" }]).limit(10)
+
+    blocks.map(block => {
+      if (["image", "video"].includes(block.type)) {
+        block.data = `${this._getServerUrl()}/${block.data}`;
+      }
+    })
+
+    let isSavedArticle = false;
+
+    if (this.request.user) {
+      const doc = await this.savedArticleModel.findOne({
+        user: this.request.user._id,
+      })
+      if (doc) {
+        isSavedArticle = true
+      }
+    }
+
+
     return {
       ...article.toObject(),
       blocks,
-      comments
+      comments,
+      isSavedArticle
     }
   }
 

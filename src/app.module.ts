@@ -13,6 +13,8 @@ import { CategoriesModule } from './categories/categories.module';
 import { SavedArticleModule } from './saved-articles/saved-article.module';
 import { ReviewModule } from './review/review.module';
 import { TagsModule } from './tags/tags.module';
+import { join } from 'path';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 const coreModules = [
   ConfigModule.forRoot({
@@ -37,6 +39,10 @@ const coreModules = [
     },
     inject: [ConfigService],
   }),
+  ServeStaticModule.forRoot({
+    rootPath: join(__dirname, "..", 'uploads'),
+    serveRoot: "/uploads"
+  }),
   ScheduleModule.forRoot(),
   DatabaseModule,
   AuthModule,
@@ -58,7 +64,6 @@ const coreProviders = [
     provide: APP_GUARD,
     useClass: AccessGuard
   }
-
 ]
 
 @Module({

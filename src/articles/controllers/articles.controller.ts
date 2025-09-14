@@ -11,6 +11,7 @@ import { UpdateArticleCategoryDto } from "../dto/update-article-category.dto";
 import { generateUniqueFilename, getDestinationByMimeType } from "src/common/helper/file-upload";
 import { ArticleOwnerGuard } from "../guards/article-owner.guard";
 import { UpdateArticleTagsDto } from "../dto/update-article-tags.dto";
+import { IsOptionalAuth } from "src/common/decorators/is-optional-auth.decorator";
 
 
 @Controller({ version: '1' })
@@ -59,6 +60,7 @@ export class ArticleController {
 
 
   @Get("article/:id")
+  @IsOptionalAuth()
   @UseInterceptors(WrapResponseInterceptor)
   get(@Param("id", ParseMongoIdPipe) id: mongoose.Types.ObjectId) {
     return this.articleService.findOne(id)

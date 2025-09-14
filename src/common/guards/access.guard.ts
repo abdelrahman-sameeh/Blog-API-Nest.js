@@ -10,7 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as jwt from 'jsonwebtoken';
 import { User } from 'src/users/schema/user.schema';
-import { IS_AUTH, ROLES } from 'src/common/constant';
+import { IS_AUTH, IS_OPTIONAL_AUTH, ROLES } from 'src/common/constant';
 
 @Injectable()
 export class AccessGuard implements CanActivate {
@@ -25,18 +25,27 @@ export class AccessGuard implements CanActivate {
       context.getClass(),
     ]);
 
+    const isOptionalAuth = this.reflector.getAllAndOverride<boolean>(IS_OPTIONAL_AUTH, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
     const roles = this.reflector.getAllAndOverride<string[]>(ROLES, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    if (!isAuth && !roles) {
+    if (!isAuth && !roles && !isOptionalAuth) {
       return true;
     }
-
+    
     const request = context.switchToHttp().getRequest();
     const token =
-      request.headers['authorization']?.split(' ')[1] || request.cookies?.jwt;
+    request.headers['authorization']?.split(' ')[1] || request.cookies?.jwt;
+    
+    if(isOptionalAuth && !token){
+      return true;
+    }
 
     if (!token) {
       throw new UnauthorizedException('no token provided');

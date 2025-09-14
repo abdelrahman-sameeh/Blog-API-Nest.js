@@ -41,4 +41,11 @@ export class CategoriesController {
     return this.categoryService.deleteOne(id)
   }
 
+
+  @Roles("admin")
+  @Post("fake")
+  createFake(){
+    return this.categoryService.fakeCategories()
+  }
+
 }
