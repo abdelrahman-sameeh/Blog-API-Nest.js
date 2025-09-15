@@ -29,7 +29,7 @@ export class ArticleService {
   ) { }
 
 
-  public _getServerUrl(...parts: string[]) {
+  private _getServerUrl(...parts: string[]) {
     /* 
       Base url is >> http://localhost:3000
       if we need add /api/v1 to url to be 
@@ -39,6 +39,12 @@ export class ArticleService {
     const baseUrl = `${this.request.protocol}://${this.request.get("host")}`;
     const url = parts.length ? new URL(parts.join("/"), baseUrl + "/") : baseUrl;
     return url.toString();
+  }
+
+
+  public _addServerUrl (path: string) {
+    if (!path) return path;
+    return path.startsWith("http") ? path : `${this._getServerUrl()}${path}`;
   }
 
   async create(body: any, files: Express.Multer.File[], user: UserType) {
@@ -218,22 +224,43 @@ export class ArticleService {
   async findOne(id: mongoose.Types.ObjectId) {
     const article = await this.articleModel
       .findById(id)
-      .populate("user", "firstName lastName")
+      .populate("user", "firstName lastName picture username")
       .populate([
         { path: "category", select: "title" },
         { path: "tags", model: Tag.name, select: "title" },
         { path: "likes", model: User.name, select: "firstName lastName picture" }
-      ])
+      ]).lean()
 
     if (!article) {
       throw new NotFoundException(`not found article ${id}`)
     }
-    const blocks = await this.articleBlockModel.find({ article: article._id }, "type data order lang").sort({ order: 1 })
-    const comments = await this.reviewModel.find({ article: id }, "-article -updatedAt -__v").populate([{ path: "author", select: "firstName lastName picture" }]).limit(10)
+
+    article.user["picture"] = this._addServerUrl(article.user["picture"])
+
+    article.likes.forEach(userLiked => {
+      userLiked["picture"] = this._addServerUrl(userLiked["picture"])
+    })
+
+    const blocks = await this.articleBlockModel
+      .find({ article: article._id }, "type data order lang")
+      .sort({ order: 1 })
+
+    const comments = await this.reviewModel
+      .find({ article: id }, "-article -updatedAt -__v")
+      .populate([{ path: "author", select: "firstName lastName picture" }])
+      .limit(10)
+      .lean()
+
+    for (let i = 0; i < comments.length; i++) {
+      const numberOfReplies = await this.reviewModel.countDocuments({ parentReview: comments[i]._id })
+      comments[i]["numberOfReplies"] = numberOfReplies;
+
+      comments[i]["author"]["picture"] = this._addServerUrl(comments[i]["author"]["picture"])
+    }
 
     blocks.map(block => {
       if (["image", "video"].includes(block.type)) {
-        block.data = `${this._getServerUrl()}/${block.data}`;
+        block.data = this._addServerUrl(`/${block.data}`);
       }
     })
 
@@ -248,14 +275,14 @@ export class ArticleService {
       }
     }
 
-
     return {
-      ...article.toObject(),
+      ...article,
       blocks,
       comments,
       isSavedArticle
     }
   }
+
 
 
   async updateArticleCategory(user: UserType, id: mongoose.Types.ObjectId, updateArticleCategoryDto: UpdateArticleCategoryDto) {

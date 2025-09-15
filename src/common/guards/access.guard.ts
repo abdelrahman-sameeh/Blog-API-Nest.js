@@ -12,6 +12,7 @@ import * as jwt from 'jsonwebtoken';
 import { User } from 'src/users/schema/user.schema';
 import { IS_AUTH, IS_OPTIONAL_AUTH, ROLES } from 'src/common/constant';
 
+
 @Injectable()
 export class AccessGuard implements CanActivate {
   constructor(
@@ -38,12 +39,12 @@ export class AccessGuard implements CanActivate {
     if (!isAuth && !roles && !isOptionalAuth) {
       return true;
     }
-    
+
     const request = context.switchToHttp().getRequest();
     const token =
-    request.headers['authorization']?.split(' ')[1] || request.cookies?.jwt;
-    
-    if(isOptionalAuth && !token){
+      request.headers['authorization']?.split(' ')[1] || request.cookies?.jwt;
+
+    if (isOptionalAuth && !token) {
       return true;
     }
 
@@ -64,6 +65,12 @@ export class AccessGuard implements CanActivate {
     }
 
     const { password, ...userDetails } = user.toObject();
+
+    const serverUrl = `${request.protocol}://${request.get("host")}`;
+    userDetails.picture = userDetails.picture.startsWith("http") ?
+      userDetails.picture :
+      `${serverUrl}${userDetails.picture}`;
+
     request.user = userDetails;
 
     if (roles && !roles.includes(user.role)) {

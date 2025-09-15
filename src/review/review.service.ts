@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Review } from './schema/review.schema';
@@ -7,11 +7,15 @@ import { User } from 'src/users/schema/user.schema';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { Pagination } from 'src/common/helper/pagination';
 import { CreateReplyDto } from './dto/create-reply.dto';
+import { ArticleService } from 'src/articles/services/articles.service';
 
 @Injectable()
 export class ReviewService {
 
-  constructor(@InjectModel(Review.name) private readonly reviewModel: Model<Review>) { }
+  constructor(
+    @InjectModel(Review.name) private readonly reviewModel: Model<Review>,
+    private readonly articleService: ArticleService
+  ) { }
 
   async createReview(user: User, createReviewDto: CreateReviewDto) {
     const numberOfUserReviews = await this.reviewModel.countDocuments({
@@ -77,7 +81,7 @@ export class ReviewService {
     }
 
     const populateOptions = [
-      { path: "author", select: "firstName lastName" },
+      { path: "author", select: "firstName lastName picture" },
     ]
 
     const paginator = new Pagination(this.reviewModel, query, page, limit, null, populateOptions)
@@ -98,9 +102,21 @@ export class ReviewService {
     return reply
   }
 
-
   async findReviewReplies(reviewId) {
-    return await this.reviewModel.find({ parentReview: reviewId }).populate({ path: "author", select: "firstName lastName" })
+    const commentReplies = await this.reviewModel
+      .find({ parentReview: reviewId })
+      .populate({ path: "author", select: "firstName lastName picture" })
+      .lean();
+
+    for (const reply of commentReplies) {
+      const numberOfReplies = await this.reviewModel
+        .countDocuments({ parentReview: reply._id })
+      reply["numberOfReplies"] = numberOfReplies;
+      reply.author["picture"] = this.articleService._addServerUrl(reply.author["picture"]);
+    }
+
+    return commentReplies
+
   }
 
 }

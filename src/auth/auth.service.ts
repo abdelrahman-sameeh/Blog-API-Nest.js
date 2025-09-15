@@ -18,6 +18,7 @@ import * as bcrypt from "bcrypt"
 import { encrypt } from 'src/common/helper/encrypt';
 import { Cron } from '@nestjs/schedule';
 import { generateUsername } from 'src/common/helper/generate-username';
+import { ArticleService } from 'src/articles/services/articles.service';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,7 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(ResetCode.name) private resetCodeModel: Model<ResetCode>,
     private readonly mailService: MailerService,
+    private readonly articleService: ArticleService
   ) { }
 
   async register(createUserDto: CreateUserDto) {
@@ -63,6 +65,7 @@ export class AuthService {
     }
     const token = await generateToken(user)
     const serializedData = new UserSerializer(user.toObject())
+    serializedData.picture = this.articleService._addServerUrl(serializedData.picture);
 
     return {
       success: true,

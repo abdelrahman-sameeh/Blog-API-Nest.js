@@ -17,6 +17,9 @@ export class UserSerializer {
   username: string;
 
   @Expose()
+  picture: string;
+
+  @Expose()
   role: string;
 
   @Exclude()

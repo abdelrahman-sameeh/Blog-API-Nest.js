@@ -8,7 +8,8 @@ import { ArticleBlockService } from "./services/article-block.service";
 
 @Module({
   controllers: [ArticleController, ArticleBlockController],
-  providers: [ArticleService, ArticleBlockService]
+  providers: [ArticleService, ArticleBlockService],
+  exports: [ArticleService]
 })
 export class ArticleModule { }
 

@@ -18,8 +18,11 @@ export class User extends Document {
   @Prop({ required: true, unique: true })
   username: string;
 
+  @Prop()
+  picture: string;
+
   @Prop({ enum: UserRoles, default: UserRoles.user })
-  role: UserRoles
+  role: UserRoles;
 
   @Prop({ required: true })
   password: string;

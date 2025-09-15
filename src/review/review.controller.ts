@@ -24,8 +24,7 @@ export class ReviewController {
     return this.reviewService.findArticleReviews(articleId, query)
   }
 
-  
-  
+
   @Patch("review/:id")
   @UseGuards(ReviewAuthor)
   @UseInterceptors(WrapResponseInterceptor)
