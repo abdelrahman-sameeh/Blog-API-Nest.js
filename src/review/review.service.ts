@@ -43,6 +43,10 @@ export class ReviewService {
 
 
   async deleteReview(reviewId) {
+    const reviews = await this.reviewModel.find({parentReview: reviewId});
+    for (const re of reviews) {
+      await this.deleteReview(re._id)
+    }
     await this.reviewModel.findByIdAndDelete(reviewId)
     return
   }

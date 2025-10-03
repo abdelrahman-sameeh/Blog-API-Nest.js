@@ -67,9 +67,11 @@ export class AccessGuard implements CanActivate {
     const { password, ...userDetails } = user.toObject();
 
     const serverUrl = `${request.protocol}://${request.get("host")}`;
-    userDetails.picture = userDetails.picture.startsWith("http") ?
-      userDetails.picture :
-      `${serverUrl}${userDetails.picture}`;
+    if (userDetails.picture) {
+      userDetails.picture = userDetails.picture.startsWith("http") ?
+        userDetails.picture :
+        `${serverUrl}/${userDetails.picture}`;
+    }
 
     request.user = userDetails;
 

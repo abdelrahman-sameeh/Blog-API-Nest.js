@@ -37,7 +37,7 @@ export class ArticleService {
       set in parts param _getServerUrl("api", "v1");
     */
     const baseUrl = `${this.request.protocol}://${this.request.get("host")}`;
-    const url = parts.length ? new URL(parts.join("/"), baseUrl + "/") : baseUrl;
+    const url = parts.length ? new URL(parts.join("/"), baseUrl + "/") : baseUrl + "/";
     return url.toString();
   }
 
@@ -260,7 +260,7 @@ export class ArticleService {
 
     blocks.map(block => {
       if (["image", "video"].includes(block.type)) {
-        block.data = this._addServerUrl(`/${block.data}`);
+        block.data = this._addServerUrl(block.data);
       }
     })
 
