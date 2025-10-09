@@ -145,49 +145,56 @@ export class ArticleService {
   }
 
 
-  private async buildArticleQuery(query, userId?) {
-    const { search, category, tags } = query;
-    const queryString: any = {};
 
-    if (userId) {
-      queryString.user = userId;
-    }
+  private buildArticleQuery(query: any, userId?) {
+  type queryType = { categories?: string[]; tags?: string[]; search?: string };
+  const { search, categories, tags }: queryType = query;
+  const queryString: any = {};
 
-    if (category) {
-      try {
-        const categoryId = new mongoose.Types.ObjectId(category);
-        const existCategory = await this.categoryModel.findById(categoryId);
-        if (!existCategory) {
-          throw new NotFoundException(`not found this category ${category}`);
-        }
-        queryString.category = categoryId;
-      } catch (err) {
-        throw new BadRequestException(`invalid category id ${category}`);
-      }
-    }
-
-    if (search) {
-      queryString.title = { $regex: search, $options: "i" };
-    }
-
-    if (tags) {
-      const tagsIds = tags.map(tagId => {
-        try {
-          return new Types.ObjectId(tagId)
-        } catch (err) {
-          throw new BadRequestException("tag must be mongo id")
-        }
-      })
-      queryString.tags = { $in: tagsIds }
-    }
-
-    return queryString;
+  if (userId) {
+    queryString.user = userId;
   }
+
+  const orConditions: any[] = [];
+
+  if (categories?.length) {
+    const categoriesIds = categories.map(catId => {
+      try {
+        return new Types.ObjectId(catId);
+      } catch (err) {
+        throw new BadRequestException(`invalid category id => ${catId}`);
+      }
+    });
+    orConditions.push({ category: { $in: categoriesIds } });
+  }
+
+  if (tags?.length) {
+    const tagsIds = tags.map(tagId => {
+      try {
+        return new Types.ObjectId(tagId);
+      } catch (err) {
+        throw new BadRequestException(`invalid tag id => ${tagId}`);
+      }
+    });
+    orConditions.push({ tags: { $in: tagsIds } });
+  }
+
+  if (search) {
+    queryString.title = { $regex: search, $options: "i" };
+  }
+
+  if (orConditions.length > 0) {
+    queryString.$or = orConditions;
+  }
+
+  return queryString;
+}
 
 
   async find(query) {
     const { page, limit } = query;
     const queryString = await this.buildArticleQuery(query);
+    
     const populate = [
       { path: "category", select: "title" },
       { path: "tags", model: Tag.name, select: "title" }

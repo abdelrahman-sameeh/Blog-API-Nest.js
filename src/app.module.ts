@@ -15,6 +15,7 @@ import { ReviewModule } from './review/review.module';
 import { TagsModule } from './tags/tags.module';
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { FilterModule } from './filter/filter.module';
 
 const coreModules = [
   ConfigModule.forRoot({
@@ -51,7 +52,8 @@ const coreModules = [
   CategoriesModule,
   SavedArticleModule,
   ReviewModule,
-  TagsModule
+  TagsModule,
+  FilterModule
 ];
 
 
