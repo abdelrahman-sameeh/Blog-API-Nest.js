@@ -7,16 +7,22 @@ import {
 import { Observable, map } from 'rxjs';
 
 
-
 @Injectable()
 export class MediaTransformInterceptor implements NestInterceptor {
   private readonly mediaFields = ['picture', 'thumbnail', 'video', 'image', 'mediaUrl', 'file', 'avatar', 'data'];
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next.handle().pipe(map((data) => this.transformMedia(data, new Set())));
+    const request = context.switchToHttp().getRequest();
+
+    // 🧠 استخراج الـ base URL الديناميكي من request
+    const protocol = request.protocol;
+    const host = request.get('host');
+    const base = `${protocol}://${host}`.replace(/\/$/, '');
+
+    return next.handle().pipe(map((data) => this.transformMedia(data, new Set(), base)));
   }
 
-  private transformMedia(obj: any, visited: Set<any>): any {
+  private transformMedia(obj: any, visited: Set<any>, base: string): any {
     if (!obj || typeof obj !== 'object') return obj;
 
     // 🛑 لو الكائن اتزار قبل كده، نرجع زي ما هو
@@ -24,13 +30,9 @@ export class MediaTransformInterceptor implements NestInterceptor {
     visited.add(obj);
 
     const isAbsolute = (s: string) => /^https?:\/\//i.test(s);
-    const base =
-      (process.env.SERVER_URL ||
-        process.env.APP_URL ||
-        `http://localhost:${process.env.PORT || 3000}`).replace(/\/$/, '');
 
     if (Array.isArray(obj)) {
-      return obj.map((item) => this.transformMedia(item, visited));
+      return obj.map((item) => this.transformMedia(item, visited, base));
     }
 
     for (const key of Object.keys(obj)) {
@@ -44,7 +46,7 @@ export class MediaTransformInterceptor implements NestInterceptor {
 
       // ✅ لو القيمة nested object أو array
       if (typeof value === 'object' && value !== null) {
-        obj[key] = this.transformMedia(value, visited);
+        obj[key] = this.transformMedia(value, visited, base);
       }
     }
 
