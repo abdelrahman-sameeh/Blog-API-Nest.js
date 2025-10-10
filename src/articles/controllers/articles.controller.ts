@@ -51,19 +51,18 @@ export class ArticleController {
   }
 
 
-  @Delete("article/:id")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @IsAuth()
-  delete(@Req() request, @Param("id", ParseMongoIdPipe) id: mongoose.Types.ObjectId) {
-    return this.articleService.delete(request.user, id)
-  }
-
-
   @Get("article/:id")
   @IsOptionalAuth()
   @UseInterceptors(WrapResponseInterceptor)
   get(@Param("id", ParseMongoIdPipe) id: mongoose.Types.ObjectId) {
     return this.articleService.findOne(id)
+  }
+
+  @Delete("article/:id")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @IsAuth()
+  delete(@Req() request, @Param("id", ParseMongoIdPipe) id: mongoose.Types.ObjectId) {
+    return this.articleService.delete(request.user, id)
   }
 
 

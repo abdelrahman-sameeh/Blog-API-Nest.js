@@ -197,7 +197,8 @@ export class ArticleService {
     
     const populate = [
       { path: "category", select: "title" },
-      { path: "tags", model: Tag.name, select: "title" }
+      { path: "tags", model: Tag.name, select: "title" },
+      { path: "user", select: "firstName lastName username picture role" },
     ];
 
     const paginator = new Pagination(this.articleModel, queryString, page, limit, {}, populate);
@@ -242,12 +243,6 @@ export class ArticleService {
       throw new NotFoundException(`not found article ${id}`)
     }
 
-    article.user["picture"] = this._addServerUrl(article.user["picture"])
-
-    article.likes.forEach(userLiked => {
-      userLiked["picture"] = this._addServerUrl(userLiked["picture"])
-    })
-
     const blocks = await this.articleBlockModel
       .find({ article: article._id }, "type data order lang")
       .sort({ order: 1 })
@@ -261,15 +256,7 @@ export class ArticleService {
     for (let i = 0; i < comments.length; i++) {
       const numberOfReplies = await this.reviewModel.countDocuments({ parentReview: comments[i]._id })
       comments[i]["numberOfReplies"] = numberOfReplies;
-
-      comments[i]["author"]["picture"] = this._addServerUrl(comments[i]["author"]["picture"])
     }
-
-    blocks.map(block => {
-      if (["image", "video"].includes(block.type)) {
-        block.data = this._addServerUrl(block.data);
-      }
-    })
 
     let isSavedArticle = false;
 

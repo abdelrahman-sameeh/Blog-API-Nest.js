@@ -18,7 +18,6 @@ import * as bcrypt from "bcrypt"
 import { encrypt } from 'src/common/helper/encrypt';
 import { Cron } from '@nestjs/schedule';
 import { generateUsername } from 'src/common/helper/generate-username';
-import { ArticleService } from 'src/articles/services/articles.service';
 
 @Injectable()
 export class AuthService {
@@ -26,12 +25,11 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(ResetCode.name) private resetCodeModel: Model<ResetCode>,
     private readonly mailService: MailerService,
-    private readonly articleService: ArticleService
   ) { }
 
   async register(createUserDto: CreateUserDto) {
     await isUnique(this.userModel, 'email', createUserDto.email)
-    
+
 
     const dto = {
       ...createUserDto,
@@ -41,9 +39,11 @@ export class AuthService {
     const salt = await bcrypt.genSalt();
     dto.password = await bcrypt.hash(dto.password, salt);
 
-    const user = await this.userModel.create(dto)
+    const user = new this.userModel(dto)
+    await user.save();
     const token = await generateToken(user)
-    const serializedData = new UserSerializer(user.toObject())
+    const serializedUser = JSON.parse(JSON.stringify(user));
+    const { password, createdAt, updatedAt, __v, ...serializedData } = serializedUser
 
     return {
       success: true,
@@ -55,22 +55,21 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const { email, username, password } = loginDto;
-    const filterKey = email ? 'email' : 'username';
-    const filterValue = email || username;
+    const filterKey = loginDto.email ? 'email' : 'username';
+    const filterValue = loginDto.email || loginDto.username;
     const filterUser = { [filterKey]: filterValue };
-    const user = await this.userModel.findOne(filterUser);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    const user = (await this.userModel.findOne(filterUser, "-createdAt -updatedAt -__v")).toJSON();
+    user._id = user._id.toString();
+    if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
       throw new ForbiddenException(`${filterKey} or password is incorrect`);
     }
     const token = await generateToken(user)
-    const serializedData = new UserSerializer(user.toObject())
-    serializedData.picture = this.articleService._addServerUrl(serializedData.picture);
+    const { password, ...userData } = user;
 
     return {
       success: true,
       data: {
-        user: serializedData,
+        user: userData,
         token
       }
     }
@@ -99,7 +98,7 @@ export class AuthService {
   }
 
 
-  async getLoggedInUser(user){
+  async getLoggedInUser(user) {
     user._id = user._id.toString()
     return user;
   }
@@ -162,7 +161,7 @@ export class AuthService {
 
     await this._sendPasswordResetEmail(user, codeToSend);
 
-      return {
+    return {
       data: {
         message: "reset code sent successfully"
       }
