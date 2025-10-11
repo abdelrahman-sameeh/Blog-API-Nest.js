@@ -5,13 +5,14 @@ import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { WrapResponseInterceptor } from "src/common/interceptors/wrap-response.interceptor";
 import { IsAuth } from "src/common/decorators/is-auth.decorator";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { ParseMongoIdPipe } from "src/common/pipe/parse-mongo-id.pipe";
 import { UpdateArticleCategoryDto } from "../dto/update-article-category.dto";
 import { generateUniqueFilename, getDestinationByMimeType } from "src/common/helper/file-upload";
 import { ArticleOwnerGuard } from "../guards/article-owner.guard";
 import { UpdateArticleTagsDto } from "../dto/update-article-tags.dto";
 import { IsOptionalAuth } from "src/common/decorators/is-optional-auth.decorator";
+import { UpdateArticleDto } from "../dto/update-article.dto";
 
 
 @Controller({ version: '1' })
@@ -32,9 +33,8 @@ export class ArticleController {
   create(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() body: any,
-    @Req() request: any
   ) {
-    return this.articleService.create(body, files, request.user)
+    return this.articleService.create(body, files)
   }
 
 
@@ -46,8 +46,8 @@ export class ArticleController {
 
   @Get("mine/article")
   @IsAuth()
-  findSpecificArticles(@Req() request, @Query() query) {
-    return this.articleService.findSpecificArticles(request.user, query)
+  findSpecificArticles(@Query() query) {
+    return this.articleService.findSpecificArticles(query)
   }
 
 
@@ -61,8 +61,16 @@ export class ArticleController {
   @Delete("article/:id")
   @HttpCode(HttpStatus.NO_CONTENT)
   @IsAuth()
-  delete(@Req() request, @Param("id", ParseMongoIdPipe) id: mongoose.Types.ObjectId) {
-    return this.articleService.delete(request.user, id)
+  delete(@Param("id", ParseMongoIdPipe) id: mongoose.Types.ObjectId) {
+    return this.articleService.delete(id)
+  }
+
+
+  @Patch("article/:id")
+  @IsAuth()
+  @UseGuards(ArticleOwnerGuard)
+  updateArticle(@Param("id", ParseMongoIdPipe) id: Types.ObjectId, @Body() updateArticleDto: UpdateArticleDto) {
+    return this.articleService.updateArticle(id, updateArticleDto);
   }
 
 
@@ -70,8 +78,8 @@ export class ArticleController {
   @IsAuth()
   @UseGuards(ArticleOwnerGuard)
   @UseInterceptors(WrapResponseInterceptor)
-  updateArticleCategory(@Req() request, @Param("id", ParseMongoIdPipe) id: mongoose.Types.ObjectId, @Body() updateArticleCategoryDto: UpdateArticleCategoryDto) {
-    return this.articleService.updateArticleCategory(request.user, id, updateArticleCategoryDto)
+  updateArticleCategory(@Param("id", ParseMongoIdPipe) id: mongoose.Types.ObjectId, @Body() updateArticleCategoryDto: UpdateArticleCategoryDto) {
+    return this.articleService.updateArticleCategory(id, updateArticleCategoryDto)
   }
 
 
@@ -87,16 +95,16 @@ export class ArticleController {
   @Patch("article/:id/like")
   @IsAuth()
   @UseInterceptors(WrapResponseInterceptor)
-  likeArticle(@Req() request, @Param("id", ParseMongoIdPipe) articleId) {
-    return this.articleService.likeArticle(request.user, articleId)
+  likeArticle(@Param("id", ParseMongoIdPipe) articleId) {
+    return this.articleService.likeArticle(articleId)
   }
 
 
   @Patch("article/:id/dislike")
   @IsAuth()
   @UseInterceptors(WrapResponseInterceptor)
-  dislikeArticle(@Req() request, @Param("id", ParseMongoIdPipe) id) {
-    return this.articleService.dislikeArticle(request.user, id)
+  dislikeArticle(@Param("id", ParseMongoIdPipe) id) {
+    return this.articleService.dislikeArticle(id)
   }
 
 }

@@ -11,13 +11,7 @@ export class UpdateArticleTagsDto {
   @ArrayMaxSize(10, { message: 'You cannot provide more than 10 tags.' })
   @Type(() => String)
   @IsString({ each: true, message: 'Each tag must be a string.' })
-  @Transform(({ value }) =>
-    Array.isArray(value)
-      ? value.map((tag) =>
-        typeof tag === 'string' ? tag.trim().toLowerCase() : tag
-      )
-      : value
-  )
+  @Transform(({ value }) => value.map((tag) => tag.trim().toLowerCase()))
   tags: string[]
 
 

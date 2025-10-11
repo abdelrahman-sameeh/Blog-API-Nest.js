@@ -14,6 +14,7 @@ import { REQUEST } from "@nestjs/core";
 import { Request } from "express";
 import path from "path"
 import { SavedArticle } from "src/saved-articles/schema/saved.article.schema";
+import { UpdateArticleDto } from "../dto/update-article.dto";
 
 @Injectable()
 export class ArticleService {
@@ -28,26 +29,8 @@ export class ArticleService {
     @InjectModel(SavedArticle.name) private readonly savedArticleModel: Model<SavedArticle>,
   ) { }
 
-
-  private _getServerUrl(...parts: string[]) {
-    /* 
-      Base url is >> http://localhost:3000
-      if we need add /api/v1 to url to be 
-      http://localhost:3000/api/v1
-      set in parts param _getServerUrl("api", "v1");
-    */
-    const baseUrl = `${this.request.protocol}://${this.request.get("host")}`;
-    const url = parts.length ? new URL(parts.join("/"), baseUrl + "/") : baseUrl + "/";
-    return url.toString();
-  }
-
-
-  public _addServerUrl (path: string) {
-    if (!path) return path;
-    return path.startsWith("http") ? path : `${this._getServerUrl()}${path}`;
-  }
-
-  async create(body: any, files: Express.Multer.File[], user: UserType) {
+  async create(body: any, files: Express.Multer.File[]) {
+    const { user } = this.request
     const title = body['title']
     if (!title) {
       throw new BadRequestException("Title is required")
@@ -147,54 +130,54 @@ export class ArticleService {
 
 
   private buildArticleQuery(query: any, userId?) {
-  type queryType = { categories?: string[]; tags?: string[]; search?: string };
-  const { search, categories, tags }: queryType = query;
-  const queryString: any = {};
+    type queryType = { categories?: string[]; tags?: string[]; search?: string };
+    const { search, categories, tags }: queryType = query;
+    const queryString: any = {};
 
-  if (userId) {
-    queryString.user = userId;
+    if (userId) {
+      queryString.user = userId;
+    }
+
+    const orConditions: any[] = [];
+
+    if (categories?.length) {
+      const categoriesIds = categories.map(catId => {
+        try {
+          return new Types.ObjectId(catId);
+        } catch (err) {
+          throw new BadRequestException(`invalid category id => ${catId}`);
+        }
+      });
+      orConditions.push({ category: { $in: categoriesIds } });
+    }
+
+    if (tags?.length) {
+      const tagsIds = tags.map(tagId => {
+        try {
+          return new Types.ObjectId(tagId);
+        } catch (err) {
+          throw new BadRequestException(`invalid tag id => ${tagId}`);
+        }
+      });
+      orConditions.push({ tags: { $in: tagsIds } });
+    }
+
+    if (search) {
+      queryString.title = { $regex: search, $options: "i" };
+    }
+
+    if (orConditions.length > 0) {
+      queryString.$or = orConditions;
+    }
+
+    return queryString;
   }
-
-  const orConditions: any[] = [];
-
-  if (categories?.length) {
-    const categoriesIds = categories.map(catId => {
-      try {
-        return new Types.ObjectId(catId);
-      } catch (err) {
-        throw new BadRequestException(`invalid category id => ${catId}`);
-      }
-    });
-    orConditions.push({ category: { $in: categoriesIds } });
-  }
-
-  if (tags?.length) {
-    const tagsIds = tags.map(tagId => {
-      try {
-        return new Types.ObjectId(tagId);
-      } catch (err) {
-        throw new BadRequestException(`invalid tag id => ${tagId}`);
-      }
-    });
-    orConditions.push({ tags: { $in: tagsIds } });
-  }
-
-  if (search) {
-    queryString.title = { $regex: search, $options: "i" };
-  }
-
-  if (orConditions.length > 0) {
-    queryString.$or = orConditions;
-  }
-
-  return queryString;
-}
 
 
   async find(query) {
     const { page, limit } = query;
     const queryString = await this.buildArticleQuery(query);
-    
+
     const populate = [
       { path: "category", select: "title" },
       { path: "tags", model: Tag.name, select: "title" },
@@ -206,12 +189,14 @@ export class ArticleService {
   }
 
 
-  async findSpecificArticles(user: User, query) {
+  async findSpecificArticles(query) {
+    const { user } = this.request
     const { page, limit } = query;
     const queryString = await this.buildArticleQuery(query, user._id);
     const populate = [
       { path: "category", select: "title" },
-      { path: "tags", model: Tag.name, select: "title" }
+      { path: "tags", model: Tag.name, select: "title" },
+      { path: "user", select: "firstName lastName username picture role" },
     ];
 
     const paginator = new Pagination(this.articleModel, queryString, page, limit, {}, populate);
@@ -219,13 +204,49 @@ export class ArticleService {
   }
 
 
-  async delete(user: UserType, id: mongoose.Types.ObjectId) {
+  async delete(id: mongoose.Types.ObjectId) {
+    const { user } = this.request;
     const article = await this.articleModel.findOneAndDelete({ _id: id, user: user._id })
     if (!article) {
       throw new NotFoundException(`not found article ${id}`)
     }
     await this.articleBlockModel.deleteMany({ article: article?._id })
     return
+  }
+
+
+  async updateArticle(id: Types.ObjectId, updateArticleDto: UpdateArticleDto) {
+
+    let { blocks, tags, ...updateArticle }: UpdateArticleDto = updateArticleDto;
+
+    if(updateArticle.category){
+      const existCategory = await this.categoryModel.findById(updateArticle.category);
+      if(!existCategory){
+        throw new NotFoundException(`category with this id ${updateArticle.category} not exist`)
+      }
+    }
+
+    const article = await this.articleModel.findByIdAndUpdate(id, updateArticle, { new: true });
+
+    if (blocks?.length) {
+      for (const b of blocks) {
+        await this.articleBlockModel.findByIdAndUpdate(b._id, { order: b.order });
+      }
+    }
+
+    const tagsDocs: any = await Promise.all(
+      tags.map(async (tag) => {
+        let existTag = await this.tagModel.findOne({ title: tag });
+        if (!existTag) existTag = await this.tagModel.create({ title: tag });
+        return existTag._id;
+      })
+    );
+
+    article.tags = tagsDocs;
+    await article.save()
+
+    return article;
+
   }
 
 
@@ -279,7 +300,8 @@ export class ArticleService {
 
 
 
-  async updateArticleCategory(user: UserType, id: mongoose.Types.ObjectId, updateArticleCategoryDto: UpdateArticleCategoryDto) {
+  async updateArticleCategory(id: mongoose.Types.ObjectId, updateArticleCategoryDto: UpdateArticleCategoryDto) {
+    const { user } = this.request;
     const article = await this.articleModel.findOneAndUpdate({ user: user._id, _id: id }, updateArticleCategoryDto, { new: true }).populate("category")
     if (!article) {
       throw new NotFoundException(`article not found ${id}`)
@@ -297,7 +319,8 @@ export class ArticleService {
   }
 
 
-  async likeArticle(user: User, articleId) {
+  async likeArticle(articleId) {
+    const { user } = this.request;
     const article = await this.articleModel.findById(articleId)
     if (!article) {
       throw new NotFoundException("Article not found")
@@ -308,7 +331,8 @@ export class ArticleService {
     return article.save()
   }
 
-  async dislikeArticle(user: User, articleId) {
+  async dislikeArticle(articleId) {
+    const { user } = this.request;
     const article = await this.articleModel.findById(articleId)
     if (!article) {
       throw new NotFoundException("Article not found")

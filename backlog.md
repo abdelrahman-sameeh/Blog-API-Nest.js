@@ -2,8 +2,10 @@
 
 ## 👤 User Features
 
-- **Update article page**  
+- **Update article page** ==> delete article, [update, delete] article block, add new article block in data base
+
   تعديل مقال كتبه المستخدم سابقًا
+
 - **Home page**  
   صفحة فيها آخر المقالات أو المقالات الموصى بيها
 - **Starting app (favorites / random)**  

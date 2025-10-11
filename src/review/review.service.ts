@@ -116,7 +116,6 @@ export class ReviewService {
       const numberOfReplies = await this.reviewModel
         .countDocuments({ parentReview: reply._id })
       reply["numberOfReplies"] = numberOfReplies;
-      reply.author["picture"] = this.articleService._addServerUrl(reply.author["picture"]);
     }
 
     return commentReplies

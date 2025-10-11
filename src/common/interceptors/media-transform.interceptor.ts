@@ -9,7 +9,7 @@ import { Observable, map } from 'rxjs';
 
 @Injectable()
 export class MediaTransformInterceptor implements NestInterceptor {
-  private readonly mediaFields = ['picture', 'thumbnail', 'video', 'image', 'mediaUrl', 'file', 'avatar', 'data'];
+  private readonly mediaFields = ['picture', 'video', 'image', 'data'];
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
@@ -39,7 +39,7 @@ export class MediaTransformInterceptor implements NestInterceptor {
       const value = obj[key];
 
       // ✅ لو المفتاح من ضمن الـ mediaFields
-      if (this.mediaFields.some((f) => key.toLowerCase().includes(f)) && typeof value === 'string' && !isAbsolute(value)) {
+      if (this.mediaFields.some((f) => key.toLowerCase().includes(f)) && typeof value === 'string' && !isAbsolute(value) && (value.startsWith("uploads/") || value.startsWith("/uploads/"))) {
         const path = value.startsWith('/') ? value : `/${value}`;
         obj[key] = `${base}${path}`;
       }
