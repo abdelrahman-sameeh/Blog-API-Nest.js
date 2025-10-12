@@ -1,26 +1,27 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
 import { ArticleBlock } from "../schemas/article-block.schema";
-import { UserType } from "src/users/schema/user.schema";
 import { Article } from "../schemas/article.schema";
 import { AddBlockDto } from "../dto/add-block.dto";
 import { join } from "path"
 import * as fs from "fs"
+import { REQUEST } from "@nestjs/core";
 
 
 @Injectable()
 export class ArticleBlockService {
 
   constructor(
+    @Inject(REQUEST) private readonly request,
     @InjectModel(ArticleBlock.name) private readonly articleBlockModel: Model<ArticleBlock>,
     @InjectModel(Article.name) private readonly articleModel: Model<Article>
   ) { }
 
 
 
-  async delete(user: UserType, articleId: mongoose.Types.ObjectId, blockId: mongoose.Types.ObjectId) {
-    const article = await this.articleModel.findOne({ user: user._id, _id: articleId })
+  async delete(articleId: mongoose.Types.ObjectId, blockId: mongoose.Types.ObjectId) {
+    const article = await this.articleModel.findOne({ user: this.request.user._id, _id: articleId })
     if (!article) {
       throw new NotFoundException(`article not found ${articleId}`)
     }

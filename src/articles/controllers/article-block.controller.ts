@@ -19,10 +19,10 @@ export class ArticleBlockController {
   @Delete("article/:articleId/block/:blockId")
   @IsAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteBlock(@Req() request, @Param("articleId") articleId: mongoose.Types.ObjectId,
+  deleteBlock(@Param("articleId") articleId: mongoose.Types.ObjectId,
     @Param("blockId") blockId: mongoose.Types.ObjectId
   ) {
-    return this.articleBlockService.delete(request.user, articleId, blockId)
+    return this.articleBlockService.delete(articleId, blockId)
   }
 
 

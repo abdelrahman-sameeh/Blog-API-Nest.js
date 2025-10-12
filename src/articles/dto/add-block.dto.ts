@@ -1,4 +1,4 @@
-import { IsEnum } from "class-validator";
+import { IsEnum, IsOptional } from "class-validator";
 
 export enum BlockType {
   VIDEO = "video",
@@ -12,6 +12,7 @@ export class AddBlockDto {
   @IsEnum(BlockType, { message: "type must be one of: video, image, code, text" })
   type: BlockType
 
+  @IsOptional()
   data: any
 
 }
