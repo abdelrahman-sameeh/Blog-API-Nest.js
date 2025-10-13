@@ -2,14 +2,12 @@
 
 ## 👤 User Features
 
-- **Update article page** ==> delete article, [update, delete] article block, add new article block in data base
+- **Update article page** ==> [update] article block
 
-  تعديل مقال كتبه المستخدم سابقًا
-
-- **Home page**  
-  صفحة فيها آخر المقالات أو المقالات الموصى بيها
 - **Starting app (favorites / random)**  
   المستخدم يختار الأقسام المفضلة أو يدخل عشوائي
+- **Home page**  
+  صفحة فيها آخر المقالات أو المقالات الموصى بيها
 - **Profile (picture, bio)**  
   صفحة البروفايل فيها صورة شخصية ونبذة عن المستخدم
 - **Notifications**  

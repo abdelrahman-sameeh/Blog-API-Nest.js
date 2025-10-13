@@ -224,6 +224,7 @@ export class ArticleService {
       if(!existCategory){
         throw new NotFoundException(`category with this id ${updateArticle.category} not exist`)
       }
+      updateArticle.category = existCategory._id
     }
 
     const article = await this.articleModel.findByIdAndUpdate(id, updateArticle, { new: true });

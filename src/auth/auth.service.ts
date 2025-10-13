@@ -99,7 +99,7 @@ export class AuthService {
 
 
   async getLoggedInUser(user) {
-    user._id = user._id.toString()
+    user = JSON.parse(JSON.stringify(user));
     return user;
   }
 

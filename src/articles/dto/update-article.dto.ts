@@ -16,6 +16,7 @@ class BlockDto {
 export class UpdateArticleDto {
   @IsOptional()
   @IsMongoId()
+  @Type(() => Types.ObjectId)
   category?: Types.ObjectId;
 
   @IsOptional()
