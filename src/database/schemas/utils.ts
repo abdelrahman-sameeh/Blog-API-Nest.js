@@ -6,6 +6,8 @@ import { ArticleBlock, ArticleBlockSchema } from "src/articles/schemas/article-b
 import { SavedArticle, SavedArticleSchema } from "src/saved-articles/schema/saved.article.schema";
 import { Review, ReviewSchema } from "src/review/schema/review.schema";
 import { Tag, TagSchema } from "src/tags/schema/tag.schema";
+import { ReportReason, ReportReasonSchema } from "src/report-articles/schema/report-reason.schema";
+import { ReportArticle, ReportArticleSchema } from "src/report-articles/schema/report-article.schema";
 
 export const schemas = [
   { name: User.name, schema: UserSchema },
@@ -16,6 +18,8 @@ export const schemas = [
   { name: SavedArticle.name, schema: SavedArticleSchema },
   { name: Review.name, schema: ReviewSchema },
   { name: Tag.name, schema: TagSchema },
+  { name: ReportReason.name, schema: ReportReasonSchema },
+  { name: ReportArticle.name, schema: ReportArticleSchema },
 ]
 
 

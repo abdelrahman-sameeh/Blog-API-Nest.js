@@ -11,19 +11,24 @@ export class Pagination {
     this.populate = populate;
   }
 
-  async paginate() {
-    const total = await this.model.countDocuments(this.query);
-    let results = this.model
+
+  createQueryObject() {
+    let queryObject = this.model
       .find(this.query)
       .sort(this.sort)
       .skip(this.skip)
       .limit(this.limit);
 
     if (this.populate) {
-      results.populate(this.populate);
+      queryObject.populate(this.populate);
     }
+    return queryObject;
+  }
 
-    results = await results;
+
+  async paginate() {
+    const total = await this.model.countDocuments(this.query);
+    const results = await this.createQueryObject();
 
     return {
       status: "success",

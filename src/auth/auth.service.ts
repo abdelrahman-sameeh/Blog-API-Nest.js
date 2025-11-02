@@ -69,7 +69,7 @@ export class AuthService {
     return {
       success: true,
       data: {
-        user: userData,
+        user: JSON.parse(JSON.stringify(userData)),
         token
       }
     }
