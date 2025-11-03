@@ -9,7 +9,7 @@ import { Request } from "express";
 import { CreateReportDto } from "./dto/create-report.dto";
 import { Article } from "src/articles/schemas/article.schema";
 import { Tag } from "src/tags/schema/tag.schema";
-import { Pagination } from "src/common/helper/pagination";
+import { ChangeReportStatusDto } from "./dto/change-report-status.dto";
 
 
 @Injectable()
@@ -59,11 +59,64 @@ export class ReportArticleService {
         { path: "category", select: "title" },
         { path: "tags", model: Tag.name, select: "title" },
       ]);
-    const reports = await this.reportArticleModel.find({ article: articleId }, "-createdAt -updatedAt -__v -article")
-      .populate([
-        { path: "reporter", select: "firstName lastName picture" },
-        { path: "reason" },
-      ]);
+
+    const reports = await this.reportArticleModel.aggregate([
+      {
+        $match: { article: new Types.ObjectId(articleId) },
+      },
+      {
+        $addFields: {
+          isPending: {
+            $cond: [{ $eq: ["$status", "pending"] }, 1, 0],
+          },
+        },
+      },
+      {
+        $sort: {
+          isPending: -1,   // الأول الـ pending
+          createdAt: -1,   // بعد كده الأحدث
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "reporter",
+          foreignField: "_id",
+          as: "reporter",
+        },
+      },
+      {
+        $unwind: "$reporter",
+      },
+      {
+        $lookup: {
+          from: "reportreasons",
+          localField: "reason",
+          foreignField: "_id",
+          as: "reason",
+        },
+      },
+      {
+        $unwind: "$reason",
+      },
+      {
+        $project: {
+          reporter: {
+            firstName: 1,
+            lastName: 1,
+            picture: 1,
+          },
+          reason: {
+            _id: 1,
+            reason: 1
+          },
+          status: 1,
+          description: 1,
+          createdAt: 1
+        },
+      },
+    ]);
+
     return {
       article,
       reports
@@ -71,27 +124,34 @@ export class ReportArticleService {
   }
 
 
-
-
-
   async getReports(query: any) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // تجميع (aggregation pipeline)
     const reports = await this.reportArticleModel.aggregate([
+      // ✅ نجمع كل البلاغات حسب المقال
       {
         $group: {
           _id: "$article",
-          count: { $sum: 1 },
+          reportsCount: { $sum: 1 },
+          numberOfPendingReports: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "pending"] }, 1, 0],
+            },
+          },
+          latestCreatedAt: { $max: "$createdAt" } // نجيب أحدث تاريخ تقرير للمقال
         },
       },
-      { $sort: { count: -1 } },
+
+      // ✅ نرتب الأولوية: المقالات اللي فيها pending الأول
+      { $sort: { hasPending: -1, latestCreatedAt: -1 } },
+
+      // ✅ نعمل pagination
       { $skip: skip },
       { $limit: limit },
 
-      // 🔹 ربط المقال
+      // ✅ نجيب بيانات المقال نفسه
       {
         $lookup: {
           from: "articles",
@@ -102,7 +162,29 @@ export class ReportArticleService {
       },
       { $unwind: "$article" },
 
-      // 🔹 ربط الـ user (صاحب المقال)
+      {
+        $lookup: {
+          from: "reportarticles", // نفس collection اللي فيه البلاغات
+          let: { articleId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$article", "$$articleId"] } } },
+            { $sort: { createdAt: -1 } },
+            { $limit: 1 },
+            {
+              $project: {
+                _id: 1,
+                status: 1,
+                reason: 1,
+                createdAt: 1,
+              },
+            },
+          ],
+          as: "lastReport",
+        },
+      },
+      { $unwind: "$lastReport" },
+
+      // // ✅ نجيب بيانات الـuser (صاحب المقال)
       {
         $lookup: {
           from: "users",
@@ -113,67 +195,49 @@ export class ReportArticleService {
       },
       { $unwind: "$article.user" },
 
-      // 🔹 ربط الـ category
-      {
-        $lookup: {
-          from: "categories",
-          localField: "article.category",
-          foreignField: "_id",
-          as: "article.category",
-        },
-      },
-      { $unwind: "$article.category" },
-
-      // 🔹 ربط الـ tags (ممكن أكتر من tag)
-      {
-        $lookup: {
-          from: "tags",
-          localField: "article.tags",
-          foreignField: "_id",
-          as: "article.tags",
-        },
-      },
-
-      // 🔹 تحديد الحقول اللي ترجع
+      // ✅ نحدد الحقول اللي نرجعها
       {
         $project: {
           _id: 0,
-          count: 1,
+          reportsCount: 1,
+          numberOfPendingReports: 1,
+          lastReport: 1,
           article: {
             _id: 1,
             title: 1,
+            createdAt: 1,
             user: {
               _id: 1,
               firstName: 1,
               lastName: 1,
               picture: 1,
             },
-            category: {
-              _id: 1,
-              title: 1,
-            },
-            tags: {
-              _id: 1,
-              title: 1,
-            },
-            createdAt: 1,
           },
         },
       },
     ]);
 
-
     const total = await this.reportArticleModel.distinct("article").then(a => a.length);
 
     return {
-      total,
-      page,
-      limit,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      },
       data: reports,
     };
   }
 
 
+  async changeReportStatus(reportId: Types.ObjectId, changeReportStatusDto: ChangeReportStatusDto) {
+    const report = await this.reportArticleModel.findByIdAndUpdate(reportId, changeReportStatusDto, { new: true });
+    if (!report) {
+      throw new NotFoundException("report not found");
+    }
+    return report;
+  }
 
 }
 
