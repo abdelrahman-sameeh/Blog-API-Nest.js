@@ -34,6 +34,10 @@ export class ReportArticleService {
     return { message: "success" }
   }
 
+  async getReasons(){
+    return this.reportReasonModel.find()
+  }
+
 
   async createReport(articleId: Types.ObjectId, createReportDto: CreateReportDto) {
     const article = await this.articleModel.findById(articleId);

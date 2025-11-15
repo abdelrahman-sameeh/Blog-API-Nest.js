@@ -3,6 +3,8 @@
 ## 👤 User Features
 
 - **Report article** → _Admin_  
+- in frontend 
+- create report (user), review report (admin), show reports for article (admin), change report status; 
   المستخدم يبلغ عن مقال مخالف → الأدمن يراجعه
 - **Home page**  
   صفحة فيها آخر المقالات أو المقالات الموصى بيها

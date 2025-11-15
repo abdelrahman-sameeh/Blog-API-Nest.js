@@ -22,6 +22,13 @@ export class ReportArticleController {
   }
 
 
+  @Get("reasons")
+  @UseInterceptors(WrapResponseInterceptor)
+  @IsAuth()
+  getReasons(){
+    return this.reportArticleService.getReasons();
+  }
+
   @Post("article/:id/report")
   @IsAuth()
   createReport(@Param("id", ParseMongoIdPipe) articleId: Types.ObjectId, @Body() createReportDto: CreateReportDto) {
@@ -37,13 +44,13 @@ export class ReportArticleController {
   }
 
 
-  @Get("reports")
+  @Get("reports/summary")
   @Roles("admin")
   getReports(@Query() query: any) {
     return this.reportArticleService.getReports(query);
   }
 
-  
+
   @Patch("report/:id")
   @Roles("admin")
   @UseInterceptors(WrapResponseInterceptor)
