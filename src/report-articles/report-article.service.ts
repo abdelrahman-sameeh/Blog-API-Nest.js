@@ -10,6 +10,7 @@ import { CreateReportDto } from "./dto/create-report.dto";
 import { Article } from "src/articles/schemas/article.schema";
 import { Tag } from "src/tags/schema/tag.schema";
 import { ChangeReportStatusDto } from "./dto/change-report-status.dto";
+import { ArticleBlock } from "src/articles/schemas/article-block.schema";
 
 
 @Injectable()
@@ -19,6 +20,7 @@ export class ReportArticleService {
     @Inject(REQUEST) private readonly request: Request,
     @InjectModel(ReportArticle.name) private readonly reportArticleModel: Model<ReportArticle>,
     @InjectModel(Article.name) private readonly articleModel: Model<Article>,
+    @InjectModel(ArticleBlock.name) private readonly articleBlockModel: Model<ArticleBlock>,
     @InjectModel(ReportReason.name) private readonly reportReasonModel: Model<ReportReason>
   ) { }
 
@@ -34,7 +36,7 @@ export class ReportArticleService {
     return { message: "success" }
   }
 
-  async getReasons(){
+  async getReasons() {
     return this.reportReasonModel.find()
   }
 
@@ -63,6 +65,8 @@ export class ReportArticleService {
         { path: "category", select: "title" },
         { path: "tags", model: Tag.name, select: "title" },
       ]);
+
+    const blocks = await this.articleBlockModel.find({ article: article._id }, "-createdAt -updatedAt -__v").sort({ order: 1 })
 
     const reports = await this.reportArticleModel.aggregate([
       {
@@ -109,6 +113,7 @@ export class ReportArticleService {
             firstName: 1,
             lastName: 1,
             picture: 1,
+            username: 1
           },
           reason: {
             _id: 1,
@@ -122,7 +127,10 @@ export class ReportArticleService {
     ]);
 
     return {
-      article,
+      article: {
+        ...article.toObject(),
+        blocks
+      },
       reports
     }
   }
