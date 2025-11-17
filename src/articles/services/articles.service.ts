@@ -174,33 +174,70 @@ export class ArticleService {
   }
 
 
-  async find(query) {
+  async getArticles(query, to: "" | "home" | "user" = "") {
     const { page, limit } = query;
-    const queryString = await this.buildArticleQuery(query);
-
+    let queryString: any;
+    if (to == "user") {
+      queryString = this.buildArticleQuery(query, this.request.user._id);
+    } else if (to == "home") {
+      queryString = {
+        category: { $in: this.request.user.preferences },
+      };
+    } else {
+      queryString = this.buildArticleQuery(query);
+    }
     const populate = [
       { path: "category", select: "title" },
       { path: "tags", model: Tag.name, select: "title" },
       { path: "user", select: "firstName lastName username picture role" },
     ];
 
-    const paginator = new Pagination(this.articleModel, queryString, page, limit, {}, populate);
-    return await paginator.paginate();
+    const paginator = new Pagination(this.articleModel, queryString, page, limit, { createdAt: -1 }, populate);
+
+    const result = await paginator.paginate()
+
+    const response = await Promise.all(
+      (result.data as any).articles.map(async (article: any) => {
+        const coverImageBlock = await this.articleBlockModel.findOne({
+          article: article._id,
+          type: "image",
+        }).sort({ order: 1 });
+
+        const firstTextBlock = await this.articleBlockModel.findOne({
+          article: article._id,
+          type: "text",
+        }).sort({ order: 1 });
+
+        return {
+          ...article.toObject ? article.toObject() : article,
+          blocksData: {
+            image: coverImageBlock?.data || null,
+            text: firstTextBlock?.data || null
+          }
+        };
+      })
+    );
+
+    return {
+      status: "success",
+      pagination: result.pagination,
+      data: {
+        articles: response
+      }
+    };
   }
 
 
-  async findSpecificArticles(query) {
-    const { user } = this.request
-    const { page, limit } = query;
-    const queryString = await this.buildArticleQuery(query, user._id);
-    const populate = [
-      { path: "category", select: "title" },
-      { path: "tags", model: Tag.name, select: "title" },
-      { path: "user", select: "firstName lastName username picture role" },
-    ];
+  async find(query) {
+    return await this.getArticles(query)
+  }
 
-    const paginator = new Pagination(this.articleModel, queryString, page, limit, {}, populate);
-    return await paginator.paginate();
+  async homePageArticles(query) {
+    return await this.getArticles(query, "home")
+  }
+
+  async findSpecificArticles(query) {
+    return await this.getArticles(query, "user")
   }
 
 
@@ -219,9 +256,9 @@ export class ArticleService {
 
     let { blocks, tags, ...updateArticle }: UpdateArticleDto = updateArticleDto;
 
-    if(updateArticle.category){
+    if (updateArticle.category) {
       const existCategory = await this.categoryModel.findById(updateArticle.category);
-      if(!existCategory){
+      if (!existCategory) {
         throw new NotFoundException(`category with this id ${updateArticle.category} not exist`)
       }
       updateArticle.category = existCategory._id

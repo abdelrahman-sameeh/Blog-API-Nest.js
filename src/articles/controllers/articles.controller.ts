@@ -44,6 +44,13 @@ export class ArticleController {
   }
 
 
+  @Get("articles/home")
+  @IsAuth()
+  homePageArticles(@Query() query) {
+    return this.articleService.homePageArticles(query)
+  }
+
+
   @Get("mine/article")
   @IsAuth()
   findSpecificArticles(@Query() query) {

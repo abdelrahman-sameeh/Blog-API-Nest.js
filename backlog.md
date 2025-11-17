@@ -10,6 +10,9 @@
 - **User Account Status**  
   add user account status
 
+- **Update Preferences-> when user change resave user in sessionStorage**
+
+- **chatting - user-profile -> view user profile page for admin,user**
 ---
 
 ## 🛠️ Admin Features
