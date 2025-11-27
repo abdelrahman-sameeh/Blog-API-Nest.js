@@ -17,6 +17,7 @@ import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { FilterModule } from './filter/filter.module';
 import { ReportArticleModule } from './report-articles/report-article.module';
+import { FollowModule } from './follow/follow.module';
 
 const coreModules = [
   ConfigModule.forRoot({
@@ -56,6 +57,7 @@ const coreModules = [
   TagsModule,
   FilterModule,
   ReportArticleModule,
+  FollowModule
 ];
 
 

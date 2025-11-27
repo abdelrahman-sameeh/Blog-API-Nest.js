@@ -1,16 +1,14 @@
 # 📌 Project Features
 
 ## 👤 User Features
-- **Home page**  
-  صفحة فيها آخر المقالات أو المقالات الموصى بيها
 - **Followers** → _User_  
   متابعة مستخدمين آخرين
+- **Home page ------- For Feature**  
+  صفحة فيها آخر المقالات أو المقالات الموصى بيها
 - **Profile (picture, bio)**  
   صفحة البروفايل فيها صورة شخصية ونبذة عن المستخدم
 - **User Account Status**  
   add user account status
-
-- **Update Preferences-> when user change resave user in sessionStorage**
 
 - **chatting - user-profile -> view user profile page for admin,user**
 ---
@@ -49,37 +47,6 @@
 
 
 ```typescript
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
-
-export enum FollowStatus {
-  pending = 'pending',
-  accepted = 'accepted',
-  blocked = 'blocked',
-}
-
-@Schema({ timestamps: true })
-export class Follow extends Document {
-  // الشخص اللي عمل follow
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  follower: Types.ObjectId;
-
-  // الشخص اللي اتعمل له follow
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  following: Types.ObjectId;
-
-  // الحالة: pending - accepted - blocked
-  @Prop({ enum: FollowStatus, default: FollowStatus.pending })
-  status: FollowStatus;
-}
-
-export const FollowSchema = SchemaFactory.createForClass(Follow);
-
---------------------------------------
---------------------------------------
---------------------------------------
---------------------------------------
-
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -91,30 +58,6 @@ export class FollowService {
     @InjectModel(Follow.name) private followModel: Model<Follow>,
   ) {}
 
-  async followUser(followerId: string, followingId: string) {
-    // لو المستخدم بالفعل متابع
-    const existing = await this.followModel.findOne({
-      follower: followerId,
-      following: followingId,
-    });
-
-    if (existing) return existing;
-
-    const follow = new this.followModel({
-      follower: new Types.ObjectId(followerId),
-      following: new Types.ObjectId(followingId),
-      status: FollowStatus.pending, // ممكن تكون accepted لو مافيش نظام موافقة
-    });
-
-    return follow.save();
-  }
-
-  async unfollowUser(followerId: string, followingId: string) {
-    return this.followModel.deleteOne({
-      follower: followerId,
-      following: followingId,
-    });
-  }
 
   async getFollowers(userId: string) {
     return this.followModel
