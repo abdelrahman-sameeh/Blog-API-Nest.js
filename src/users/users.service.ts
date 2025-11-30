@@ -4,8 +4,9 @@ import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schema/user.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Category } from 'src/categories/schema/category.schema';
+import { Follow, FollowStatus } from 'src/follow/schema/follow.schema';
 
 @Injectable()
 export class UsersService {
@@ -14,6 +15,7 @@ export class UsersService {
     @Inject(REQUEST) private readonly request: Request,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
+    @InjectModel(Follow.name) private followModel: Model<Follow>,
   ) { }
 
   async updatePreferences(updatePreferencesDto: UpdatePreferencesDto) {
@@ -45,6 +47,41 @@ export class UsersService {
     }
 
   }
+
+  async writerProfile(writerId: Types.ObjectId) {
+    const user = this.request.user;
+    let followers = [];
+    let blockers = [];
+    const writer = await this.userModel.findById(writerId, "-password -__v -createdAt -updatedAt -role -email -preferences")
+
+    if (user) {
+      const follows = await this.followModel.find({
+        $or: [
+          { follower: user._id, following: writerId },
+          { follower: writerId, following: user._id }
+        ]
+      });
+
+      for (const follow of follows) {
+        if (follow.status === FollowStatus.blocked) {
+          blockers.push(follow.blocker);
+        } else if (
+          follow.follower.toString() === user._id.toString() &&
+          follow.status === FollowStatus.accepted
+        ) {
+          followers.push(follow.follower);
+        }
+      }
+
+    }
+    return {
+      followers,
+      blockers,
+      writer,
+    }
+  }
+
+
 
 
 }

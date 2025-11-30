@@ -53,8 +53,14 @@ export class ArticleController {
 
   @Get("mine/article")
   @IsAuth()
-  findSpecificArticles(@Query() query) {
-    return this.articleService.findSpecificArticles(query)
+  findMineArticles(@Query() query) {
+    return this.articleService.findMineArticles(query)
+  }
+
+
+  @Get("user/:id/articles")
+  getArticlesByWriter(@Param("id", ParseMongoIdPipe) writerId: Types.ObjectId, @Query() query) {
+    return this.articleService.getArticlesByWriter(writerId, query)
   }
 
 

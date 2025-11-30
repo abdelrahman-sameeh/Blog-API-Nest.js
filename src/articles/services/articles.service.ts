@@ -174,11 +174,11 @@ export class ArticleService {
   }
 
 
-  async getArticles(query, to: "" | "home" | "user" = "") {
+  async getArticles(query, to: "" | "home" | "user" = "", userId = this.request.user._id) {
     const { page, limit } = query;
     let queryString: any;
     if (to == "user") {
-      queryString = this.buildArticleQuery(query, this.request.user._id);
+      queryString = this.buildArticleQuery(query, userId);
     } else if (to == "home") {
       queryString = {
         category: { $in: this.request.user.preferences },
@@ -236,8 +236,13 @@ export class ArticleService {
     return await this.getArticles(query, "home")
   }
 
-  async findSpecificArticles(query) {
+  async findMineArticles(query) {
     return await this.getArticles(query, "user")
+  }
+
+
+  async getArticlesByWriter(writerId: Types.ObjectId, query: any) {
+    return await this.getArticles(query, "user", writerId)
   }
 
 
