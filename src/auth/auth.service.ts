@@ -2,7 +2,7 @@ import { ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundExce
 import { CreateUserDto } from './dto/create-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from '../users/schema/user.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { generateToken } from '../common/helper/generate-token';
 import { UserSerializer } from './serializers/user.serializer';
 import { isUnique } from '../common/helper/is-unique';
@@ -75,7 +75,7 @@ export class AuthService {
     }
   }
 
-  async changePassword(changePasswordDto: ChangePasswordDto, userId: string): Promise<object> {
+  async changePassword(changePasswordDto: ChangePasswordDto, userId: Types.ObjectId): Promise<object> {
     const user = await this.userModel.findById(userId);
 
     const isOldPasswordValid = await bcrypt.compare(changePasswordDto.oldPassword, user.password);

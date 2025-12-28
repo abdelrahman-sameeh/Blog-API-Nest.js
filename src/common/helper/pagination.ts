@@ -1,20 +1,21 @@
 export class Pagination {
   private skip: number;
 
-  constructor(private model, private query?, private page?, private limit?, private sort={}, private populate?) {
+  constructor(private model, private filter?, private page?, private limit?, private sort={}, private populate?, private projection = "") {
     this.model = model;
-    this.query = query;
+    this.filter = filter;
     this.page = parseInt(page, 10) || 1;
     this.limit = parseInt(limit, 10) || 10;
     this.skip = (this.page - 1) * this.limit;
     this.sort = sort;
     this.populate = populate;
+    this.projection = projection;
   }
 
 
   createQueryObject() {
     let queryObject = this.model
-      .find(this.query)
+      .find(this.filter, this.projection)
       .sort(this.sort)
       .skip(this.skip)
       .limit(this.limit);
@@ -27,7 +28,7 @@ export class Pagination {
 
 
   async paginate() {
-    const total = await this.model.countDocuments(this.query);
+    const total = await this.model.countDocuments(this.filter);
     const results = await this.createQueryObject();
 
     return {

@@ -18,6 +18,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { FilterModule } from './filter/filter.module';
 import { ReportArticleModule } from './report-articles/report-article.module';
 import { FollowModule } from './follow/follow.module';
+import { FriendRequestModule } from './friend-request/friend-request.module';
 
 const coreModules = [
   ConfigModule.forRoot({
@@ -57,7 +58,8 @@ const coreModules = [
   TagsModule,
   FilterModule,
   ReportArticleModule,
-  FollowModule
+  FollowModule,
+  FriendRequestModule
 ];
 
 

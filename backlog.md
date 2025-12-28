@@ -7,15 +7,17 @@
   رؤية ال users اللى عامليين ليا follow وانا مش عاملهم
   friend request in private account
 
-- **Profile (picture, bio, private account)**  
+- **Profile (picture, bio)**  
   صفحة البروفايل فيها صورة شخصية ونبذة عن المستخدم
+
+- **User Account Status**  
+  add user account status
+
 - **Home page ------- For Feature**  
   صفحة فيها آخر المقالات أو المقالات الموصى بيها
 
 - **chatting**
 
-- **User Account Status**  
-  add user account status
 
 ---
 
