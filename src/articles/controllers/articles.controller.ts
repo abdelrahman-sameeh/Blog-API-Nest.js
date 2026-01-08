@@ -120,6 +120,13 @@ export class ArticleController {
     return this.articleService.dislikeArticle(id)
   }
 
+
+  @Get("articles/feed")
+  @IsAuth()
+  getFeed(@Query() query){
+    return this.articleService.getFeed(query)
+  }
+
 }
 
 

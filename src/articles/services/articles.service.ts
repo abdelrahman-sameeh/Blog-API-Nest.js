@@ -174,7 +174,7 @@ export class ArticleService {
   }
 
 
-  async getArticles(query, to: "" | "home" | "user" = "", userId = this.request.user._id) {
+  async getArticles(query, to: "" | "home" | "user" = "", userId = this.request?.user?._id) {
     const { page, limit } = query;
     let queryString: any;
     if (to == "user") {
@@ -386,6 +386,192 @@ export class ArticleService {
     }
     return article.save()
   }
+
+
+
+  async getFeed(query) {
+    const { limit = 10, page = 1 } = query;
+    const userId = this.request.user._id;
+
+    const skip = (page - 1) * limit;
+
+    const result = await this.articleModel.aggregate([
+      /* ================= FOLLOW FILTER ================= */
+      {
+        $lookup: {
+          from: 'follows',
+          let: { articleUserId: '$user' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$following', '$$articleUserId'] },
+                    { $eq: ['$follower', userId] },
+                    { $eq: ['$status', 'accepted'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'followRelation',
+        },
+      },
+      {
+        $match: {
+          followRelation: { $ne: [] },
+        },
+      },
+
+      /* ================= SORT ================= */
+      { $sort: { createdAt: -1 } },
+
+      /* ================= FACET ================= */
+      {
+        $facet: {
+          /* ================= DATA ================= */
+          data: [
+            { $skip: skip },
+            { $limit: Number(limit) },
+
+            /* ===== populate user ===== */
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'user',
+                foreignField: '_id',
+                as: 'user',
+              },
+            },
+            { $unwind: '$user' },
+
+            /* ===== populate category ===== */
+            {
+              $lookup: {
+                from: 'categories',
+                localField: 'category',
+                foreignField: '_id',
+                as: 'category',
+              },
+            },
+            { $unwind: '$category' },
+
+            /* ===== populate tags ===== */
+            {
+              $lookup: {
+                from: 'tags',
+                localField: 'tags',
+                foreignField: '_id',
+                as: 'tags',
+              },
+            },
+
+            /* ===== blocksData (ArticleBlock) ===== */
+            {
+              $lookup: {
+                from: 'articleblocks',
+                let: { articleId: '$_id' },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ['$article', '$$articleId'] },
+                    },
+                  },
+                  { $sort: { order: 1 } },
+                  {
+                    $group: {
+                      _id: '$type',
+                      data: { $first: '$data' },
+                    },
+                  },
+                ],
+                as: 'blocksData',
+              },
+            },
+
+            /* ===== blocksData array → object ===== */
+            {
+              $addFields: {
+                blocksData: {
+                  $arrayToObject: {
+                    $map: {
+                      input: '$blocksData',
+                      as: 'b',
+                      in: {
+                        k: '$$b._id',
+                        v: '$$b.data',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+
+            /* ===== FINAL PROJECT (clean + privacy safe) ===== */
+            {
+              $project: {
+                _id: 1,
+                title: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                visibility: 1,
+                likes: 1,
+                blocksData: 1,
+
+                user: {
+                  _id: 1,
+                  firstName: 1,
+                  lastName: 1,
+                  username: 1,
+                  role: 1,
+                  picture: 1,
+                },
+
+                category: {
+                  _id: 1,
+                  title: 1,
+                },
+
+                tags: {
+                  $map: {
+                    input: '$tags',
+                    as: 'tag',
+                    in: {
+                      _id: '$$tag._id',
+                      title: '$$tag.title',
+                    },
+                  },
+                },
+              },
+            }
+
+          ],
+
+          /* ================= COUNT ================= */
+          totalCount: [{ $count: 'total' }],
+        },
+      },
+    ]);
+
+
+    const articles = result[0].data;
+    const total = result[0].totalCount[0]?.total || 0;
+    const pages = Math.ceil(total / limit);
+
+    return {
+      status: 'success',
+      pagination: {
+        total,
+        count: articles.length,
+        page: Number(page),
+        pages,
+      },
+      data: {
+        articles,
+      },
+    };
+  }
+
 
 
 }
