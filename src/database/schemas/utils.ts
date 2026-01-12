@@ -10,6 +10,8 @@ import { ReportReason, ReportReasonSchema } from "src/report-articles/schema/rep
 import { ReportArticle, ReportArticleSchema } from "src/report-articles/schema/report-article.schema";
 import { Follow, FollowSchema } from "src/follow/schema/follow.schema";
 import { FriendRequest, FriendRequestSchema } from "src/friend-request/schema/friend-request.schema";
+import { Chat, ChatSchema } from "src/chat/schema/chat.schema";
+import { Message, MessageSchema } from "src/chat/schema/message.schema";
 
 export const schemas = [
   { name: User.name, schema: UserSchema },
@@ -24,6 +26,8 @@ export const schemas = [
   { name: ReportArticle.name, schema: ReportArticleSchema },
   { name: Follow.name, schema: FollowSchema },
   { name: FriendRequest.name, schema: FriendRequestSchema },
+  { name: Chat.name, schema: ChatSchema },
+  { name: Message.name, schema: MessageSchema },
 ]
 
 
